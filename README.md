@@ -1,4 +1,4 @@
-# school_tracker
+# SCHOOL TRACKER
 RESTful app for tracking child's activity in educational institution
 
 ## Purpose:
