@@ -17,9 +17,6 @@ class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):
         if request.user.is_superuser or request.user.is_staff:
             return True
 
-        print(obj.child.parent.user.email)
-        print(request.user.email)
-
         if obj.child.parent.user.email == request.user.email:
             return True
 
