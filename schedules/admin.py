@@ -10,6 +10,7 @@ class DayPlanAdmin(admin.ModelAdmin):
     )
     ordering = ["day"]
     list_filter = ["child", "day"]
+    index_together = ["child", "day"]
 
 
 @admin.register(Event)

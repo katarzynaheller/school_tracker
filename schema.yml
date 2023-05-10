@@ -4,11 +4,220 @@ info:
   version: 1.0.0
   description: App for tracking child activity in educational institution
 paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/chats/:
+    get:
+      operationId: v1_chats_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+          description: ''
+  /api/v1/chats/{message_id}/:
+    get:
+      operationId: v1_chats_retrieve
+      parameters:
+      - in: path
+        name: message_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
+  /api/v1/chats/create/:
+    post:
+      operationId: v1_chats_create_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Message'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /api/v1/dayplans/:
     get:
-      operationId: dayplans_list
+      operationId: v1_dayplans_list
       tags:
-      - dayplans
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -22,9 +231,9 @@ paths:
                   $ref: '#/components/schemas/DayPlan'
           description: ''
     post:
-      operationId: dayplans_create
+      operationId: v1_dayplans_create
       tags:
-      - dayplans
+      - v1
       requestBody:
         content:
           application/json:
@@ -49,7 +258,7 @@ paths:
           description: ''
   /api/v1/dayplans/child/{id}/{day}/:
     get:
-      operationId: dayplans_child_retrieve
+      operationId: v1_dayplans_child_retrieve
       parameters:
       - in: path
         name: day
@@ -62,7 +271,7 @@ paths:
           type: integer
         required: true
       tags:
-      - dayplans
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -71,7 +280,7 @@ paths:
           description: No response body
   /api/v1/members/child/{id}/:
     get:
-      operationId: members_child_retrieve
+      operationId: v1_members_child_retrieve
       parameters:
       - in: path
         name: id
@@ -79,7 +288,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -91,7 +300,7 @@ paths:
                 $ref: '#/components/schemas/Child'
           description: ''
     put:
-      operationId: members_child_update
+      operationId: v1_members_child_update
       parameters:
       - in: path
         name: id
@@ -99,7 +308,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -123,7 +332,7 @@ paths:
                 $ref: '#/components/schemas/Child'
           description: ''
     patch:
-      operationId: members_child_partial_update
+      operationId: v1_members_child_partial_update
       parameters:
       - in: path
         name: id
@@ -131,7 +340,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -155,9 +364,9 @@ paths:
           description: ''
   /api/v1/members/children/:
     get:
-      operationId: members_children_list
+      operationId: v1_members_children_list
       tags:
-      - members
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -171,9 +380,9 @@ paths:
                   $ref: '#/components/schemas/Child'
           description: ''
     post:
-      operationId: members_children_create
+      operationId: v1_members_children_create
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -196,11 +405,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/Child'
           description: ''
+  /api/v1/members/group/:
+    get:
+      operationId: v1_members_group_list
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+          description: ''
+    post:
+      operationId: v1_members_group_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Group'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Group'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          description: ''
+  /api/v1/members/group/{id}/:
+    get:
+      operationId: v1_members_group_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          description: ''
   /api/v1/members/parent/:
     get:
-      operationId: members_parent_list
+      operationId: v1_members_parent_list
       tags:
-      - members
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -214,9 +487,9 @@ paths:
                   $ref: '#/components/schemas/Parent'
           description: ''
     post:
-      operationId: members_parent_create
+      operationId: v1_members_parent_create
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -241,7 +514,7 @@ paths:
           description: ''
   /api/v1/members/parent/{id}/:
     get:
-      operationId: members_parent_retrieve
+      operationId: v1_members_parent_retrieve
       parameters:
       - in: path
         name: id
@@ -249,7 +522,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -261,7 +534,7 @@ paths:
                 $ref: '#/components/schemas/Parent'
           description: ''
     put:
-      operationId: members_parent_update
+      operationId: v1_members_parent_update
       parameters:
       - in: path
         name: id
@@ -269,7 +542,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -293,7 +566,7 @@ paths:
                 $ref: '#/components/schemas/Parent'
           description: ''
     patch:
-      operationId: members_parent_partial_update
+      operationId: v1_members_parent_partial_update
       parameters:
       - in: path
         name: id
@@ -301,7 +574,7 @@ paths:
           type: integer
         required: true
       tags:
-      - members
+      - v1
       requestBody:
         content:
           application/json:
@@ -373,6 +646,22 @@ components:
       - child
       - day
       - id
+    Group:
+      type: object
+      properties:
+        group_name:
+          type: string
+          maxLength: 50
+        members:
+          type: array
+          items:
+            type: integer
+        teacher:
+          type: integer
+      required:
+      - group_name
+      - members
+      - teacher
     MealsAtSchoolEnum:
       enum:
       - FL
@@ -385,6 +674,30 @@ components:
         * `HF` - Halfy eaten
         * `FW` - Poorly eaten
         * `NM` - Not marked
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sender:
+          type: integer
+          readOnly: true
+        child:
+          type: integer
+          nullable: true
+        message_text:
+          type: string
+          maxLength: 1000
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - message_text
+      - sender
+      - timestamp
     Parent:
       type: object
       properties:
