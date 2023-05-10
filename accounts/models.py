@@ -11,6 +11,18 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
+    
+    TEACHER = "TH"
+    PARENT = "PR"
+    UNSET = "US"
+    USER_TYPES = [
+        (TEACHER, "Teacher"),
+        (PARENT, "Parent"),
+        (UNSET, "Unset"),
+    ]
+    user_type = models.CharField(
+        max_length=2, choices=USER_TYPES, default=UNSET
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = [
