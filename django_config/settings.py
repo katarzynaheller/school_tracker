@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "members.apps.MembersConfig",
     "schedules.apps.SchedulesConfig",
+    "chats.apps.ChatsConfig",
 ]
 
 MIDDLEWARE = [
