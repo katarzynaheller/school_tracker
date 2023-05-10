@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Child, Parent
+from .models import Child, Parent, Group
 
 
 class ChildSerializer(serializers.ModelSerializer):
@@ -20,3 +20,12 @@ class ParentSerializer(serializers.ModelSerializer):
             "child",
         )
         model = Parent
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = (
+            "group_name",
+            "members",
+            "teacher",
+        )
+        model = Group

@@ -1,33 +1,44 @@
 from django.http import Http404
 from rest_framework import generics
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .permissions import (
     ParentOnlyViewAndTeacherEdit,
     OnlyStaffCanSeeListViews,
 )
-from .models import Child, Parent
-from .serializers import ChildSerializer, ParentSerializer
+from .models import Child, Parent, Group
+from .serializers import ChildSerializer, ParentSerializer, GroupSerializer
 
 
-class ChildList(generics.ListCreateAPIView):
+class ChildListView(generics.ListCreateAPIView):
     permission_classes = [OnlyStaffCanSeeListViews]
     queryset = Child.objects.all()
     serializer_class = ChildSerializer
 
 
-class ChildDetail(generics.RetrieveUpdateAPIView):
+class ChildDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [ParentOnlyViewAndTeacherEdit]
     queryset = Child.objects.all()
     serializer_class = ChildSerializer
 
 
-class ParentList(generics.ListCreateAPIView):
+class ParentListView(generics.ListCreateAPIView):
     permission_classes = [OnlyStaffCanSeeListViews]
     queryset = Parent.objects.all()
     serializer_class = ParentSerializer
 
 
-class ParentDetail(generics.RetrieveUpdateAPIView):
+class ParentDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAdminUser]
     queryset = Parent.objects.all()
     serializer_class = ParentSerializer
+
+class GroupDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
+class GroupListView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
