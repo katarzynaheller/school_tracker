@@ -12,5 +12,5 @@ Messages views need three kinds of permissions:
 
 #only message owner can delete it
 class IsMessageOwner(BasePermission):
-    def has_object_permission(self, request, obj):
+    def has_object_permission(self, request, view, obj):
         return obj.sender == request.user
