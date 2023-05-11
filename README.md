@@ -32,6 +32,13 @@ ListAPIView
 ![schooltracker_listapiview](https://github.com/katarzynaheller/school_tracker/assets/110901739/f7117b1b-dd17-4594-b659-05ff21580b5d)
 
 ### Schedules app:
+In schedules app teacher can create DayPlans for each child with short daily summary. DayPlan model can be adjusted for institution purposes. In this example teacher choose meals, behaviour and note summary.
+
+Creating DayPlan and DayPlan list:
+![Zrzut ekranu 2023-05-11 o 13 49 56](https://github.com/katarzynaheller/school_tracker/assets/110901739/f50238e2-b91e-43ae-83a3-fd4bb5de76cd)
+
 
 ### Members app: 
+School tracker system was designed that only manager (superuser) can add each member: parent, teacher, child as CustomUser model. In UserCreationForm it is custom user_type field where the role can be assigned to the user, but permissions needed to be added mannually (or thru groups) by a manager/superuser. For example: parent can access child, teacher and own profile view and add/view/change/delete message.
 
+![schooltracker_members_group_permissions](https://github.com/katarzynaheller/school_tracker/assets/110901739/2448676e-ad77-48ac-b2d2-dade40b061f7)
