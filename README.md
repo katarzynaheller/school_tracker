@@ -20,9 +20,16 @@ Chats app is designed to send and track messages about a child. For security and
 
 CreateAPIView
 
+![schooltracker_createapiview](https://github.com/katarzynaheller/school_tracker/assets/110901739/382a0144-77b7-45ec-bc70-73d896d18670)
+
 DetailAPIView
 
+![schooltracker_detailapiview](https://github.com/katarzynaheller/school_tracker/assets/110901739/ae348764-31df-484c-98af-c3b7273b7381)
+
+
 ListAPIView
+
+![schooltracker_listapiview](https://github.com/katarzynaheller/school_tracker/assets/110901739/f7117b1b-dd17-4594-b659-05ff21580b5d)
 
 ### Schedules app:
 
