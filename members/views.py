@@ -17,8 +17,10 @@ class ChildListView(generics.ListCreateAPIView):
 
 class ChildDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [ParentOnlyViewAndTeacherEdit]
-    queryset = Child.objects.all()
     serializer_class = ChildSerializer
+
+    def get_object(self):
+        return Child.objects.get(pk=self.kwargs['pk'])
 
 
 class ParentListView(generics.ListCreateAPIView):
