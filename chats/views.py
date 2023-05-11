@@ -1,47 +1,51 @@
 from django.db.models import Q
+from django.http import Http404
 from rest_framework import generics, permissions
 
 from .models import Message
 
-from members.models import Parent, Teacher, Child
+from members.models import Parent, Teacher, Child, Group
 
 from .serializers import MessageSerializer
+from .permissions import IsMessageOwner
 
 def CheckForRoleAndConnectedChild(user):
-    if user.is_superuser:
-        return Child.objects.all()
-    else:
-        try:
-            parent = Parent.objects.get(id=user.id)
-            #extract parent's child/children
-            children = Child.objects.filter(parent=parent)
-            return children
-        
-        except Parent.DoesNotExist:
+        if user.is_superuser:
+            return Child.objects.all()
+
+        else:
             try:
-                teacher = Teacher.objects.get(id=user.id)
-                #extract children connected with teacher
-                children = teacher.children.all()
+                #retrieve instance(s) of parent's child (children)
+                parent = Parent.objects.get(user=user.id)
+                children = Child.objects.filter(parent=parent)
                 return children
+        
+            except Parent.DoesNotExist:
+                try:
+                    #retrieve instances of children included in teacher's group
+                    teacher = Teacher.objects.get(user=user.id)
+                    group = Group.objects.get(teacher=teacher)
+                    children = group.members.all()
+                    
+                    return children
             
-            except Teacher.DoesNotExist:
-                print("User is neither a parent nor a teacher")
+                except Teacher.DoesNotExist:
+                    print("User is neither a parent nor a teacher")
 
-
+        
+#View for messages lists about particular child (related to sender)
 class MessageListAPIView(generics.ListAPIView):
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] 
 
     def get_queryset(self):
         user = self.request.user
-
         children = CheckForRoleAndConnectedChild(user)
         children_ids = [child.id for child in children] 
-        # Filter messages sent by a user
-        queryset = Message.objects.filter(child_id__in=children_ids)
+        return Message.objects.filter(child_id__in=children_ids)
+        
 
-        return queryset
-
+#View for creating a message
 class MessageCreateAPIView(generics.CreateAPIView):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -50,19 +54,34 @@ class MessageCreateAPIView(generics.CreateAPIView):
         # Set the sender to the authenticated user
         serializer.save(sender=self.request.user)
 
-class MessageDetailAPIView(generics.RetrieveAPIView):
+    def get_serializer_context(self):
+        """
+        restricts child choice to related to sender
+        """
+        # Call the superclass method to get the base context
+        context = super().get_serializer_context()
+
+        # Filter the child queryset to only those related to the authenticated user
+        user = self.request.user
+        children = CheckForRoleAndConnectedChild(user)
+
+        # Add the filtered child queryset to the context
+        context['children'] = children
+
+        return context
+
+
+#View for a single instance of message
+class MessageDetailAPIView(generics.RetrieveDestroyAPIView):
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'id', 'children'
+    permission_classes = [IsMessageOwner]
+    lookup_field = 'id'
     lookup_url_kwarg = 'message_id'
 
-    def get_queryset(self):
+    def get_object(self):
         user = self.request.user
-
-        # Filter messages sent by user
-        queryset = Message.objects.filter(
-            Q(sender=user)
-        )
-
-        return queryset
-
+        try:
+            message = Message.objects.get(sender=user, pk=self.kwargs['message_id'])
+        except Message.DoesNotExist:
+            raise Http404
+        return message

@@ -3,7 +3,7 @@ from accounts.models import CustomUser
 
 from members.models import Child
 
-#for single instance
+
 class Message(models.Model):
     sender = models.ForeignKey(
         CustomUser,
