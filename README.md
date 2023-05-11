@@ -16,6 +16,13 @@ App was designed with custom permissions for three different types of users: par
 Each user (parent/teacher) is added by superuser (no signup option) and can log in on webpage. Superuser and teacher (as is_staff member) has own admin view. 
 
 ### Chats app:
+Chats app is designed to send and track messages about a child. For security and data protection reasons several restrictions needed to be implemented. Parent can access only messages about his child/children. Teacher can view messages about children who are assigned to his group. Messages play role in complement everyday communication - when something needs to be discussed or mentioned. Here parent can also inform about absence or teacher about emergency situation.
+
+CreateAPIView
+
+DetailAPIView
+
+ListAPIView
 
 ### Schedules app:
 
