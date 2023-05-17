@@ -30,7 +30,7 @@ class ParentListView(generics.ListCreateAPIView):
 
 
 class ParentDetailView(generics.RetrieveUpdateAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = Parent.objects.all()
     serializer_class = ParentSerializer
 
