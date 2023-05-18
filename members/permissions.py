@@ -1,5 +1,5 @@
 from rest_framework import permissions
-
+from django.core.exceptions import PermissionDenied
 """ Permissions for three type of members:
 - superuser: unlimited,
 - teacher: can access list views and view/edit detail views,
@@ -17,6 +17,7 @@ class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):
             return True
 
     def has_object_permission(self, request, view, obj):
+
         if request.user.is_superuser or request.user.is_staff:
             return True
 
@@ -34,3 +35,11 @@ class OnlyStaffCanSeeListViews(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.is_staff:
             return True
+
+class GroupDetailViewForRelatedTeacher(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser or obj.teacher.user.email == request.user.email:
+            return True
+        else:
+            return False

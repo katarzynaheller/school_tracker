@@ -1,9 +1,11 @@
 from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .permissions import (
     ParentOnlyViewAndTeacherEdit,
     OnlyStaffCanSeeListViews,
+    GroupDetailViewForRelatedTeacher
 )
 from .models import Child, Parent, Group
 from .serializers import ChildSerializer, ParentSerializer, GroupSerializer
@@ -20,7 +22,12 @@ class ChildDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ChildSerializer
 
     def get_object(self):
-        return Child.objects.get(pk=self.kwargs['pk'])
+        try: 
+            obj = Child.objects.get(pk=self.kwargs['pk'])
+            self.check_object_permissions(self.request, obj)
+            return obj
+        except ObjectDoesNotExist:
+            raise Http404 
 
 
 class ParentListView(generics.ListCreateAPIView):
@@ -31,13 +38,21 @@ class ParentListView(generics.ListCreateAPIView):
 
 class ParentDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Parent.objects.all()
     serializer_class = ParentSerializer
 
+    def get_object(self):
+        obj = Parent.objects.get(pk=self.kwargs['pk'])
+        self.check_object_permissions(self.request, obj)
+        return obj
+
 class GroupDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = Group.objects.all()
+    permission_classes = [GroupDetailViewForRelatedTeacher]
     serializer_class = GroupSerializer
+
+    def get_object(self):
+        obj = Group.objects.get(pk=self.kwargs['pk'])
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 class GroupListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]

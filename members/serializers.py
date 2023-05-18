@@ -24,8 +24,9 @@ class ParentSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         fields = (
-            "group_name",
+            "id",
             "members",
             "teacher",
+            "group_name"
         )
         model = Group
