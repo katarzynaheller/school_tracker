@@ -3,7 +3,7 @@ from .models import Message
 from members.models import Child
 
 
-class MessageSerializer(serializers.ModelSerializer):
+class MessageCreateSerializer(serializers.ModelSerializer):
     sender = serializers.PrimaryKeyRelatedField(
         read_only=True,
         default=serializers.CurrentUserDefault(),
@@ -22,3 +22,17 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'sender', 'child', 'message_text', 'timestamp']
         read_only_fields = ['id', 'timestamp']
 
+#serializer for listing collection of messages in a main view 
+class MessageListSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = (
+            "id",
+            "child",
+        )
+        model = Message
+
+#serializer for listing messages in detailed view
+class MessageDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'

@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import MessageListAPIView, MessageCreateAPIView, MessageDetailAPIView
+from .views import MessageCreateAPIView, MessageMainListAPIView, MessageDetailedListView
 
-app_name= "chats"
+
 
 urlpatterns = [
-    path('', MessageListAPIView.as_view(), name="message_list"),
+    path('', MessageMainListAPIView.as_view(), name="message_main_list"),
+    path('child/<int:child_id>/', MessageDetailedListView.as_view(), name="message_detailed_list"),
     path('create/', MessageCreateAPIView.as_view(), name="message_create"),
-    path('<int:message_id>/', MessageDetailAPIView.as_view(), name="message_detail"),
+    
 ]
