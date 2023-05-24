@@ -24,13 +24,18 @@ class Child(models.Model):
             - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
         )
         return age
+    
+    @property
+    def group_member(self):
+        groups = self.group_set.all()
+        return ", ".join([group.group_name for group in groups])
+    
 
     def __str__(self):
         return self.full_name
 
 class Teacher(models.Model):
     user =  models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-
 
     def __str__(self):
         return self.user.email

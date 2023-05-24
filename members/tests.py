@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from datetime import date
+
 from accounts.models import CustomUser
 from .models import Child, Parent,Teacher,Group
 from .serializers import ChildSerializer, ParentSerializer, GroupSerializer
@@ -92,7 +93,7 @@ class MembersDetailViewTests(APITestCase):
 
 class MembersListViewTests(APITestCase):
     '''
-    Because of permissions - child list view is available only for members with is_staff status
+    Child list view is available only for members with is_staff status
     '''
     
     def setUp(self):
