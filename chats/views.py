@@ -9,28 +9,7 @@ from members.models import Parent, Teacher, Child, Group
 from .serializers import MessageCreateSerializer, MessageListSerializer, MessageDetailSerializer
 from .permissions import IsRelatedToChild
 
-#Custom method to check relations between user and child instances
-def CheckForRoleAndConnectedChild(user):
-        if user.is_superuser:
-            return Child.objects.all()
-        else:
-            try:
-                #retrieve child(ren) related with user-parent
-                parent = Parent.objects.get(user=user.id)
-                children = Child.objects.filter(parent=parent)
-                return children
-        
-            except Parent.DoesNotExist:
-                try:
-                    #retrieve child(ren) related with user-teacher
-                    teacher = Teacher.objects.get(user=user.id)
-                    group = Group.objects.get(teacher=teacher)
-                    children = group.members.all()
-                    
-                    return children
-            
-                except Teacher.DoesNotExist:
-                    print("User is neither a parent nor a teacher")
+from .utils import CheckForRoleAndConnectedChild
 
         
 #View for a main collection of messages
@@ -39,16 +18,13 @@ class MessageMainListAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated] 
         
     def get_queryset(self):
-        try: 
-            user = self.request.user
-            related_children = CheckForRoleAndConnectedChild(user)
-            related_children_ids = [child.id for child in related_children]
+        related_children = CheckForRoleAndConnectedChild(self.request.user)
+        related_children_ids = [child.id for child in related_children]
 
-            self.check_permissions(self.request)
-
-            return Message.objects.filter(child_id__in=related_children_ids)
-        except Message.DoesNotExist:
-            return False
+        if not related_children:
+            return Message.objects.none() #Return empty queryset if user is not yet related to any child
+        
+        return Message.objects.filter(child_id__in=related_children_ids)
 
         
 
@@ -58,21 +34,15 @@ class MessageDetailedListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsRelatedToChild] 
 
     def get_queryset(self):
-        try: 
-            user = self.request.user
-            
-            related_children = CheckForRoleAndConnectedChild(user)
-            related_children_ids = [child.id for child in related_children]
-            child_id = self.kwargs.get('child_id')
-            queryset = Message.objects.filter(child = child_id)
-            
-            self.check_permissions(self.request)
+        #retrieve child id parameter from url
+        related_children = CheckForRoleAndConnectedChild(self.request.user)
 
-            return queryset
-        
-        except PermissionDenied:
-            return False
+        requested_child = self.kwargs.get('child_id')
+        queryset = Message.objects.filter(child = requested_child)
+            
+        # self.check_permissions(self.request.user)
 
+        return queryset
 
 #View for creating a message
 class MessageCreateAPIView(generics.CreateAPIView):

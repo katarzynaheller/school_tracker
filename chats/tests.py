@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import CustomUser
 from members.models import Parent, Teacher, Child, Group
 from .models import Message
-from .permissions import CheckForRoleAndConnectedChild
+from .utils import CheckForRoleAndConnectedChild
 
 
 class MessageModelTest(TestCase):
@@ -118,7 +118,7 @@ class MessageMainListAPIViewTest(APITestCase):
 
 
     def test_parent_main_view(self):
-        # Make a GET request to the view's URL
+        # Requested user should have access to the view and see created message about his child
         self.client.force_authenticate(user=self.userparent)
         response = self.client.get(self.url)
 
@@ -133,3 +133,18 @@ class MessageMainListAPIViewTest(APITestCase):
 
         self.assertEqual(len(messages), len(messages_queryset))
 
+    def test_teacher_main_view(self):
+        # Requested user should have access to the view but with empty list (no related child)
+        self.client.force_authenticate(user=self.userteacher)
+        response = self.client.get(self.url)
+
+
+        # Check the response status code
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        related_children_ids = [child.id for child in CheckForRoleAndConnectedChild(self.userteacher)]
+        messages_queryset = Message.objects.filter(child_id__in=related_children_ids)
+        messages = [message['child'] for message in response.data]
+
+        # Verify that the returned data is correct
+        self.assertEqual(len(messages), 0)
