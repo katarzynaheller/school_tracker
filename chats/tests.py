@@ -142,9 +142,7 @@ class MessageMainListAPIViewTest(APITestCase):
         # Check the response status code
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        related_children_ids = [child.id for child in CheckForRoleAndConnectedChild(self.userteacher)]
-        messages_queryset = Message.objects.filter(child_id__in=related_children_ids)
         messages = [message['child'] for message in response.data]
-
+        
         # Verify that the returned data is correct
         self.assertEqual(len(messages), 0)
