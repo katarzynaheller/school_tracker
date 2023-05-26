@@ -1,10 +1,7 @@
 
 from rest_framework import generics, permissions
-from rest_framework.exceptions import PermissionDenied
 
 from .models import Message
-
-from members.models import Parent, Teacher, Child, Group
 
 from .serializers import MessageCreateSerializer, MessageListSerializer, MessageDetailSerializer
 from .permissions import IsRelatedToChild
@@ -55,7 +52,7 @@ class MessageCreateAPIView(generics.CreateAPIView):
 
     def get_serializer_context(self):
         """
-        restricts child choice to related to sender
+        limit child choice to related to sender
         """
         # Call the superclass method to get the base context
         context = super().get_serializer_context()

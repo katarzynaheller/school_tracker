@@ -41,5 +41,3 @@ class GroupDetailViewForRelatedTeacher(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser or obj.teacher.user.email == request.user.email:
             return True
-        else:
-            return False

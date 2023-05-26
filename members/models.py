@@ -29,17 +29,19 @@ class Child(models.Model):
     def group_member(self):
         groups = self.group_set.all()
         return ", ".join([group.group_name for group in groups])
-    
 
     def __str__(self):
         return self.full_name
+    
+    class Meta:
+        verbose_name = "Child"
+        verbose_name_plural = "Children"
 
 class Teacher(models.Model):
     user =  models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.email
-    
 
 
 class Group(models.Model):

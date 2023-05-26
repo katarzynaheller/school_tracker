@@ -1,10 +1,13 @@
+from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
 
-
+@admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
@@ -20,8 +23,10 @@ class CustomUserAdmin(UserAdmin):
     list_filter = (
         "email",
         "is_staff",
-        "is_active",
+        "user_type",
     )
+
+
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         (
@@ -40,10 +45,7 @@ class CustomUserAdmin(UserAdmin):
                     "user_type",
                     "password1",
                     "password2",
-                    "is_staff",
-                    "is_active",
                     "groups",
-                    "user_permissions",
                 )
             },
         ),
@@ -52,4 +54,3 @@ class CustomUserAdmin(UserAdmin):
     ordering = ("email",)
 
 
-admin.site.register(CustomUser, CustomUserAdmin)

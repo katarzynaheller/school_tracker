@@ -41,9 +41,12 @@ class ParentDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ParentSerializer
 
     def get_object(self):
-        obj = Parent.objects.get(pk=self.kwargs['pk'])
-        self.check_object_permissions(self.request, obj)
-        return obj
+        try: 
+            obj = Parent.objects.get(pk=self.kwargs['pk'])
+            self.check_object_permissions(self.request, obj)
+            return obj
+        except ObjectDoesNotExist:
+            return False
 
 class GroupDetailView(generics.RetrieveAPIView):
     permission_classes = [GroupDetailViewForRelatedTeacher]
