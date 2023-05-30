@@ -5,6 +5,8 @@ from django.urls import reverse
 from .factories import CustomUserFactory, ParentFactory, ChildFactory, TeacherFactory, GroupFactory, MessageFactory
 
 from accounts.models import CustomUser
+from chats.models import Message
+
 class CheckPermissionForEndpoints(APITestCase):
 
     #Children ListView accessible for teacher, not parent (members/children/)
@@ -429,3 +431,29 @@ class CheckPermissionForEndpoints(APITestCase):
         self.assertEqual(len(response.data),1)
         self.assertIn(message_child_one.message_text, [message['message_text'] for message in response.data])        
         self.assertNotIn(message_child_two.message_text, [message['message_text'] for message in response.data])
+
+    def test_create_message(self):
+        
+        #set up
+        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        parent = ParentFactory(user = user_parent)
+        child = ChildFactory(parent=parent)
+        message_text = 'Hello, this is a test message'
+
+        #POST request
+        self.client.force_authenticate(user_parent)
+        data = {
+            'child':child.id,
+            'message_text': message_text
+        }
+        self.url = reverse('message_create')
+        response = self.client.post(self.url, data)
+
+        created_message = Message.objects.latest("id")
+
+        #assertions
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(created_message.sender, user_parent)
+        self.assertEqual(created_message.child, child)
+        self.assertEqual(created_message.message_text, message_text)
+
