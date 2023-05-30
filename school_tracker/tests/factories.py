@@ -1,53 +1,79 @@
 import factory
+import random
 from django.contrib.auth import get_user_model
 from members.models import Parent, Child, Teacher, Group
+from accounts.models import CustomUser
 from chats.models import Message
 
 from accounts.models import CustomUser
 
 class CustomUserFactory(factory.django.DjangoModelFactory):
-    pass
+    class Meta:
+        model = get_user_model()
 
-# class ParentFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Parent
+    email = factory.Faker("email")
+    first_name = factory.Faker("first_name")
+    last_name = factory.Faker("last_name")
+    password = factory.Faker("password")
+    # user_type = CustomUser.TEACHER #defaut value
 
-#     userparent = factory.SubFactory(CustomUserFactory) #SubFactory to create related instances
+    @factory.lazy_attribute
+    def user_type(self):
+        #Generate random user_type: either TEACHER or PARENT
+        return random.choice([CustomUser.TEACHER, CustomUser.PARENT])
+    
 
-# class ChildFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Child
+class ParentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Parent
 
-#     full_name = factory.Faker('name')
-#     birth_date = factory.Faker('date')
-#     parent = factory.SubFactory(ParentFactory)
+    user = factory.SubFactory(CustomUserFactory, user_type = CustomUser.PARENT)
 
-# class TeacherFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Teacher
 
-#     userteacher = factory.SubFactory(CustomUserFactory)
+class ChildFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Child
 
-# class GroupFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Group
+    full_name = factory.Faker('name')
+    birth_date = factory.Faker('date')
+    parent = factory.SubFactory(ParentFactory)
 
-#     teacher = factory.SubFactory(TeacherFactory)
+class TeacherFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Teacher
 
-#     #decorator used to handle many-to-many relationship between Group and Child models
-#     @factory.post_generation
-#     def members(self, create, extracted, **kwargs):
-#         if not create:
-#             return #simple build a factory, do nothing
-#         if extracted:
-#             for member in extracted: #if a list of members was passed in use it
-#                 self.members.add(member)
+    user = factory.SubFactory(CustomUserFactory, user_type = CustomUser.TEACHER)
 
-# class MessageFactory(factory.django.DjangoModelFactory):
-#     class Meta:
-#         model = Message
+    # @factory.post_generation
+    # def is_staff(self,create, extracted, **kwargs):
+    #     if not create:
+    #         return #excit the function 
+    #     if self.user.user_type == CustomUser.TEACHER:
+    #         self.is_staff = True
+    #     self.user.save()
+        
 
-#     sender = factory.SubFactory(CustomUserFactory)
-#     child = factory.SubFactory(ChildFactory)
-#     message_text = factory.Faker('text')
-#     timestamp = factory.Faker('date')
+class GroupFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Group
+
+    teacher = factory.SubFactory(TeacherFactory)
+
+    #decorator used to handle many-to-many relationship between Group and Child models
+    @factory.post_generation
+    def members(self, create, extracted, **kwargs):
+        if not create:
+            return 
+        if extracted:
+            # self.members.set(list(extracted)) #set method replaces teh current set Child instances
+            for member in extracted:
+                self.members.add(member)
+
+class MessageFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Message
+
+    sender = factory.SubFactory(CustomUserFactory)
+    child = factory.SubFactory(ChildFactory)
+    message_text = factory.Faker('text')
+    timestamp = factory.Faker('date')

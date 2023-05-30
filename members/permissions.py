@@ -1,5 +1,7 @@
 from rest_framework import permissions
 from django.core.exceptions import PermissionDenied
+
+from chats.utils import CheckForRoleAndConnectedChild
 """ Permissions for three type of members:
 - superuser: unlimited,
 - teacher: can access list views and view/edit detail views,
@@ -17,17 +19,21 @@ class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):
             return True
 
     def has_object_permission(self, request, view, obj):
+        related_children = CheckForRoleAndConnectedChild(request.user)
+        related_children_ids = [child.id for child in related_children]
 
-        if request.user.is_superuser or request.user.is_staff:
+        if obj.id in related_children_ids:
             return True
 
-        if (
-            obj.parent.user.email == request.user.email
-            and request.method not in self.edit_methods
-        ):
-            return True
-
-        return False
+        # if request.user.is_superuser:
+        #     return True
+        
+        # elif (
+        #     obj.parent.user.email == request.user.email
+        #     and request.method not in self.edit_methods
+        # ):
+        #     return True
+        # return False
 
 
 

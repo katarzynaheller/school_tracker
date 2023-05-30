@@ -45,7 +45,7 @@ class CustomUser(AbstractUser):
         if self.is_superuser or self.user_type == self.TEACHER :
             self.is_staff = True 
         else:
-            self.user_type == self.PARENT
+            self.user_type = self.PARENT
             self.is_staff = False
 
         super().save(*args, **kwargs)
