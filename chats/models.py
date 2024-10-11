@@ -8,7 +8,7 @@ class Message(models.Model):
     sender = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name='sent_messages',
+        related_name='sender',
     )
 
     child = models.ForeignKey(Child, on_delete=models.CASCADE, null=True, blank=True)

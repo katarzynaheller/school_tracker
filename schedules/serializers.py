@@ -4,6 +4,13 @@ from .models import DayPlan
 
 
 class DayPlanSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta():
         model = DayPlan
-        fields = "__all__"
+        fields = (
+            "day",
+            "child",
+            "meals_at_school",
+            "behaviour",
+            "summary",
+            "event",
+        )

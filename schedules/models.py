@@ -56,7 +56,3 @@ class DayPlan(models.Model):
 
     def __str__(self):
         return self.child.full_name
-
-    class Meta:
-        verbose_name = "Dayplan"
-        verbose_name_plural = "Dayplans"
