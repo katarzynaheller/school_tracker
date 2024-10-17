@@ -17,11 +17,13 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView
 
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/members/", include("members.urls")),
-    path("api/v1/dayplans/", include("schedules.urls")),
+    path("api/v1/chats/", include("school_tracker.chats.urls")),
+    path("api/v1/dayplans/", include("school_tracker.schedules.urls")),
+    path("api/v1/members/", include("school_tracker.members.urls")),
     path("api-auth/", include("rest_framework.urls")),
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/v1/chats/", include("chats.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema")
+    
 ]

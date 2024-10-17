@@ -47,10 +47,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "drf_spectacular",
-    "accounts.apps.AccountsConfig",
-    "members.apps.MembersConfig",
-    "schedules.apps.SchedulesConfig",
-    "chats.apps.ChatsConfig",
+    "school_tracker.accounts",
+    "school_tracker.members",
+    "school_tracker.schedules",
+    "school_tracker.chats",
 ]
 
 MIDDLEWARE = [
