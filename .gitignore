@@ -3,3 +3,7 @@
 *.sqlite3
 __pycache__/
 .DS_Store
+.dockerignore
+*.sql
+*.sql.gz
+*.dump
