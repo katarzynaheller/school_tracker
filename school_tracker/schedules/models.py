@@ -16,30 +16,11 @@ class Event(models.Model):
 class DayPlan(models.Model):
     day = models.DateField(auto_now=True)
     child = models.ForeignKey(Child, on_delete=models.CASCADE)
-    FULL = "FL"
-    HALF = "HF"
-    FEW = "FW"
-    NOTMARKED = "NM"
-    FOOD_CHOICES = [
-        (FULL, "Fully eaten"),
-        (HALF, "Halfy eaten"),
-        (FEW, "Poorly eaten"),
-        (NOTMARKED, "Not marked"),
-    ]
     meals_at_school = models.CharField(
-        max_length=2, choices=FOOD_CHOICES, default=NOTMARKED
+        max_length=20, choices=MealStatusEnum.choices, default=MealStatusEnum.not_specified
     )
-    EVERYTHING_OK = "OK"
-    NEED_TALK = "NT"
-    NOTDEFINED = "ND"
-
-    BEHAVIOUR_CHOICES = [
-        (EVERYTHING_OK, "Everything ok"),
-        (NEED_TALK, "We need to talk"),
-        (NOTDEFINED, "Not defined"),
-    ]
     behaviour = models.CharField(
-        max_length=2, choices=BEHAVIOUR_CHOICES, default=NOTDEFINED
+        max_length=20, choices=BehaviourStatusEnum.choices, default=BehaviourStatusEnum.not_specified
     )
     summary = models.TextField(null=True, blank=True)
 
