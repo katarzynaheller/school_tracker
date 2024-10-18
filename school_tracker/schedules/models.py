@@ -2,6 +2,10 @@ from django.db import models
 from django.utils import timezone
 
 from school_tracker.members.models import Child
+from school_tracker.schedules.enums import (
+    BehaviourStatusEnum,
+    MealStatusEnum
+)
 
 
 class Event(models.Model):
