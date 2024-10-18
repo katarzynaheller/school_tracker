@@ -4,12 +4,6 @@ from rest_framework import permissions
 from school_tracker.chats.utils import CheckForRoleAndConnectedChild
 
 
-""" Permissions for three type of members:
-- superuser: unlimited,
-- teacher: can access list views and view/edit detail views,
-- parent: can access only detail view of his child"""
-
-
 class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):
     """Permission to limit child's detail view.
     Only parent of a child can view detail page, and teacher can view and update"""

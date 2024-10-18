@@ -35,10 +35,9 @@ class CustomUser(AbstractUser):
     
     #override model's save() method to automatically set is_staff for Teacher instances
     def save(self, *args, **kwargs):
-        if self.is_superuser or self.user_type == self.TEACHER :
+        if self.is_superuser or self.user_type == UserTypeEnum.teacher:
             self.is_staff = True 
-        else:
-            self.user_type = self.PARENT
+        elif self.user_type == UserTypeEnum.parent:
             self.is_staff = False
 
         super().save(*args, **kwargs)

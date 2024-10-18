@@ -1,24 +1,23 @@
-from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 
-from school_tracker.members.models import Child, Teacher, Parent, Group
 from school_tracker.chats.utils import CheckForRoleAndConnectedChild
 
-'''
-Messages views need three kinds of permissions:
-- parent can view messages only about his child
-- teacher can view messages about children which are related to him
-- superuser can view every messages
-'''
+class AdminOrRelatedToChildPermission(permissions.BasePermission):
+    message = "Only parents or teachers related to child can see this content"
 
+    def has_permission(self, request, view=None):
+        if not request.user.is_authenticated:
+            return False
 
-class IsRelatedToChild(BasePermission):
-    def has_permission(self, request, view):
-        related_children = CheckForRoleAndConnectedChild(request.user)
-        related_children_ids = [child.id for child in related_children]
-
-        #Check if the view has kwargs and 'child_id' is present
-        if hasattr(view, 'kwargs') and 'child_id' in view.kwargs:
-            requested_child_id = view.kwargs['child_id']
-
-        if requested_child_id in related_children_ids:
+        if request.user.is_superuser:
             return True
+
+        if request.user.user_role in ["parent", "teacher"]:
+            related_children = CheckForRoleAndConnectedChild(request.user)
+            related_children_ids = [child.id for child in related_children]
+
+            if hasattr(view, 'kwargs') and 'child_id' in view.kwargs:
+                requested_child_id = view.kwargs['child_id']
+                return requested_child_id in related_children_ids
+
+        return False

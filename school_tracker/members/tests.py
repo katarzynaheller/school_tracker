@@ -62,10 +62,6 @@ class MembersTests(TestCase):
         self.assertEqual(self.group.members.count(), 1)
         self.assertIn(self.child, self.group.members.all())
 
-   
-
-
-User = get_user_model()
 
 class MembersDetailViewTests(APITestCase):
     '''
