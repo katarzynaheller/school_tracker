@@ -9,7 +9,7 @@ from rest_framework.test import APITestCase
 from school_tracker.accounts.models import CustomUser
 from school_tracker.chats.models import Message
 from school_tracker.members.models import Parent, Teacher, Child, Group
-from school_tracker.utils import CheckForRoleAndConnectedChild
+from school_tracker.utils import check_for_role_and_child
 
 
 class MessageModelTest(TestCase):

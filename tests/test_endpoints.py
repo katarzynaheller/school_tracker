@@ -1,40 +1,54 @@
 from django.test import TestCase
+from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
-from django.urls import reverse
-from .factories import CustomUserFactory, ParentFactory, ChildFactory, TeacherFactory, GroupFactory, MessageFactory
 
-from accounts.models import CustomUser
-from chats.models import Message
+from school_tracker.utils.enums import UserTypeEnum
+from school_tracker.accounts.models import CustomUser
+from school_tracker.chats.models import Message
+from tests.factories import (
+    CustomUserFactory, 
+    ParentFactory, 
+    ChildFactory, 
+    TeacherFactory, 
+    GroupFactory, 
+    MessageFactory
+)
+
 
 class CheckPermissionForEndpoints(APITestCase):
 
-    #Children ListView accessible for teacher, not parent (members/children/)
-    def test_access_to_child_list_view_for_teacher(self):
-        
-        #set up
-        user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
-        teacher = TeacherFactory(user=user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
-        parent = ParentFactory(user = user_parent)
-        child = ChildFactory(parent = parent)
-        group = GroupFactory(teacher = teacher, members = [child])
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
 
-        #GET request
-        self.url = reverse('children_list')
-        self.client.force_authenticate(user=user_teacher)
+        cls.user_teacher = CustomUserFactory()
+        cls.teacher = TeacherFactory(user=cls.user_teacher)
+
+        cls.user_parent = CustomUserFactory()
+        cls.parent = ParentFactory(user=cls.user_parent)
+
+        cls.group = GroupFactory(teacher=[cls.teacher])
+        cls.child = ChildFactory(group=cls.group) 
+
+
+    def test_access_to_child_list_view_for_teacher(self):
+
+        # when:
+        self.url = reverse('api:members')
+        self.client.force_authenticate(user=self.user_teacher)
         responce = self.client.get(self.url)
 
-        #assertion
+        # then:
         self.assertEqual(responce.status_code, status.HTTP_200_OK)
-        self.assertEqual(teacher.user.is_staff, True)
-        self.assertEqual(user_teacher.user_type, CustomUser.TEACHER)
-        self.assertIn(child, group.members.all())
+        self.assertEqual(self.teacher.user.is_staff, True)
+        self.assertEqual(self.user_teacher.user_type, UserTypeEnum.teacher)
+        self.assertIn(self.child, self.group.members.all())
 
     def test_access_to_child_list_view_for_parent(self):
 
         #set up
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         
@@ -46,14 +60,14 @@ class CheckPermissionForEndpoints(APITestCase):
         #assertion
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(parent.user.is_staff, False)
-        self.assertEqual(user_parent.user_type, CustomUser.PARENT)
+        self.assertEqual(user_parent.user_type, UserTypeEnum.parent)
         self.assertEqual(child.parent, parent)
 
     #Child DetailView accessible for related teacher and parent (members/child/1/)
     def test_access_to_child_detail_view_for_parent(self):
         
         #set up
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
 
@@ -65,15 +79,15 @@ class CheckPermissionForEndpoints(APITestCase):
         #assertion
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(parent.user.is_staff)
-        self.assertEqual(user_parent.user_type, CustomUser.PARENT)
+        self.assertEqual(user_parent.user_type, UserTypeEnum.parent)
         self.assertEqual(child.parent, parent)
 
     def test_access_to_child_detail_view_for_related_teacher(self):
 
         #set up
-        user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         teacher = TeacherFactory(user = user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher=teacher, members = [child]) #pass a list containing the single child object
@@ -92,11 +106,11 @@ class CheckPermissionForEndpoints(APITestCase):
     def test_access_to_child_detail_view_for_unrelated_teacher(self):
 
         #set up
-        related_user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        related_user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         related_teacher = TeacherFactory(user = related_user_teacher)
-        unrelated_user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        unrelated_user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         unrelated_teacher = TeacherFactory(user = unrelated_user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher=related_teacher, members = [child]) #pass a list containing the single child object
@@ -119,9 +133,9 @@ class CheckPermissionForEndpoints(APITestCase):
     def test_group_list_view_related_teacher(self):
 
         #set up
-        user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         teacher = TeacherFactory(user = user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher = teacher, members = [child])
@@ -139,11 +153,11 @@ class CheckPermissionForEndpoints(APITestCase):
     def test_group_list_view_unrelated_teacher(self):
 
         #set up
-        related_user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        related_user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         related_teacher = TeacherFactory(user = related_user_teacher)
-        unrelated_user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        unrelated_user_teacher = CustomUserFactory(user_type = UserTypeEnum.teacher)
         unrelated_teacher = TeacherFactory(user = unrelated_user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory(user_type = UserTypeEnum.parent)
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher=related_teacher, members = [child])
@@ -160,9 +174,9 @@ class CheckPermissionForEndpoints(APITestCase):
     def test_group_list_view_parent(self):
 
         #set up
-        user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
-        teacher = TeacherFactory(user = user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_teacher = CustomUserFactory()
+        teacher = TeacherFactory(user=user_teacher)
+        user_parent = CustomUserFactory()
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher = teacher, members = [child])
@@ -179,9 +193,9 @@ class CheckPermissionForEndpoints(APITestCase):
     def test_group_detail_view_related_teacher(self):
 
         #set up
-        user_teacher = CustomUserFactory(user_type = CustomUser.TEACHER)
+        user_teacher = CustomUserFactory()
         teacher = TeacherFactory(user = user_teacher)
-        user_parent = CustomUserFactory(user_type = CustomUser.PARENT)
+        user_parent = CustomUserFactory()
         parent = ParentFactory(user = user_parent)
         child = ChildFactory(parent = parent)
         group = GroupFactory(teacher = teacher, members = [child])

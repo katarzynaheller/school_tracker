@@ -10,4 +10,5 @@ class UserTypeEnum(models.TextChoices):
     teacher = auto()
     parent = auto()
     manager = auto()
+    admin = auto()
     unset = auto()

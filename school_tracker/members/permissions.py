@@ -1,13 +1,7 @@
 from django.core.exceptions import PermissionDenied
 from rest_framework import permissions
 
-from school_tracker.chats.utils import CheckForRoleAndConnectedChild
-
-
-""" Permissions for three type of members:
-- superuser: unlimited,
-- teacher: can access list views and view/edit detail views,
-- parent: can access only detail view of his child"""
+from school_tracker.utils import check_for_role_and_child
 
 
 class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):

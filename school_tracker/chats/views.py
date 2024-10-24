@@ -1,70 +1,65 @@
 
-from rest_framework import generics, permissions
+from rest_framework import (
+    mixins, 
+    viewsets
+)
+from rest_framework.decorators import action
+from rest_framework.filters import (
+    OrderingFilter,
+    SearchFilter
+)
+from rest_framework.permissions import IsAuthenticated
 
 from school_tracker.chats.models import Message
 
-from school_tracker.chats.serializers import MessageCreateSerializer, MessageListSerializer, MessageDetailSerializer
-from school_tracker.chats.permissions import IsRelatedToChild
+from school_tracker.chats.serializers import (
+    MessageCreateSerializer,
+    MessageSerializer
+)
+from school_tracker.utils.dicttools import get_values_from_dict
+from school_tracker.utils.permissions import AdminOrRelatedToChildPermission
 
-from school_tracker.chats.utils import CheckForRoleAndConnectedChild
 
-        
-#View for a main collection of messages
-class MessageMainListAPIView(generics.ListAPIView):
-    serializer_class = MessageListSerializer
-    permission_classes = [permissions.IsAuthenticated] 
-        
-    def get_queryset(self):
-        related_children = CheckForRoleAndConnectedChild(self.request.user)
-        related_children_ids = [child.id for child in related_children]
+class MessageViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    permission_classes = [IsAuthenticated, AdminOrRelatedToChildPermission]
+    serializer_class = MessageSerializer
+    lookup_field = "child_id"
 
-        if not related_children:
-            return Message.objects.none() #Return empty queryset if user is not yet related to any child
-        
-        return Message.objects.filter(child_id__in=related_children_ids)
+    serializer_map = {
+        "create": MessageCreateSerializer,
+    }
 
-        
+    _message_creation_keys = ["message_text"]
 
-#View for a list of messages about particular child    
-class MessageDetailedListView(generics.ListAPIView):
-    serializer_class = MessageDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, IsRelatedToChild] 
+    def get_serializer_class(self, *args, **kwargs):
+        return self.serializer_map.get(self.action, self.serializer_class)
 
     def get_queryset(self):
-        #retrieve child id parameter from url
-        related_children = CheckForRoleAndConnectedChild(self.request.user)
-
-        requested_child = self.kwargs.get('child_id')
-        queryset = Message.objects.filter(child = requested_child)
-            
-        # self.check_permissions(self.request.user)
-
-        return queryset
-
-#View for creating a message
-class MessageCreateAPIView(generics.CreateAPIView):
-    serializer_class = MessageCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        # Set the sender to the authenticated user
-        serializer.save(sender=self.request.user)
+        if child_id := self.kwargs.get("child_id"):
+            return Message.objects.filter(child=child_id)
+        else:
+            return Message.objects.filter(sender_id=request.user.id)
 
     def get_serializer_context(self):
-        """
-        limit child choice to related to sender
-        """
-        # Call the superclass method to get the base context
         context = super().get_serializer_context()
-
-        # Filter the child queryset to only those related to the authenticated user
-        user = self.request.user
-        children = CheckForRoleAndConnectedChild(user)
-
-        # Add the filtered child queryset to the context
-        context['children'] = children
-
+        context['child_id'] = self.kwargs.get('child_id')
         return context
+
+    def perform_create(self, serializer):
+        data = get_values_from_dict(serializer.validated_data, self._message_creation_keys)
+        data["sender"] = self.request.user.id
+        data["child"] = self.kwargs.get("child_id")
+        message = Message.objects.create(**data)
+
+    @action(methods=["get"], url_path="chat-with-parent", detail=False)
+    def chat_with_parent(self, request, *arg, **kwargs):
+        """
+        Custom action for teacher instance to list all messages with a particular parent
+        """
+        sender_id = request.query_params.get('sender_id')
+        user_id = request.query_parames.get('user_id,')
+        return Message.objects.fetch_by_sender_and_child(sender_id, child_id)
+
 
 
 

@@ -2,9 +2,17 @@ from django.db import models
 from django.utils import timezone
 
 from school_tracker.members.models import Child
+from school_tracker.utils.enums import (
+    BehaviourStatusEnum,
+    MealStatusEnum
+)
+from school_tracker.schedules.manager import DayPlanManager
 
 
 class Event(models.Model):
+    """
+    Model to store special events planned in a given institution or group
+    """
     title = models.CharField(max_length=200)
     description = models.TextField()
     date = models.DateField()
@@ -14,34 +22,25 @@ class Event(models.Model):
 
 
 class DayPlan(models.Model):
+    """
+    Model to represent daily activity and status
+    """
     day = models.DateField(auto_now=True)
-    child = models.ForeignKey(Child, on_delete=models.CASCADE)
-    FULL = "FL"
-    HALF = "HF"
-    FEW = "FW"
-    NOTMARKED = "NM"
-    FOOD_CHOICES = [
-        (FULL, "Fully eaten"),
-        (HALF, "Halfy eaten"),
-        (FEW, "Poorly eaten"),
-        (NOTMARKED, "Not marked"),
-    ]
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="dayplans")
     meals_at_school = models.CharField(
-        max_length=2, choices=FOOD_CHOICES, default=NOTMARKED
+        max_length=20, choices=MealStatusEnum.choices, default=MealStatusEnum.not_specified
     )
-    EVERYTHING_OK = "OK"
-    NEED_TALK = "NT"
-    NOTDEFINED = "ND"
-
-    BEHAVIOUR_CHOICES = [
-        (EVERYTHING_OK, "Everything ok"),
-        (NEED_TALK, "We need to talk"),
-        (NOTDEFINED, "Not defined"),
-    ]
     behaviour = models.CharField(
-        max_length=2, choices=BEHAVIOUR_CHOICES, default=NOTDEFINED
+        max_length=20, choices=BehaviourStatusEnum.choices, default=BehaviourStatusEnum.not_specified
     )
     summary = models.TextField(null=True, blank=True)
 
+    objects = DayPlanManager()
+
     def __str__(self):
-        return self.child.full_name
+        return f"Dayplan for {self.child.full_name} at {self.day}"
+
+    @property
+    def events(self):
+        if events := Event.objects.filter(date=self.day):
+            return [event.title for event in events] if events.exists() else "No events for today."
