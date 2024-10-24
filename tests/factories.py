@@ -2,13 +2,12 @@ import factory
 import random
 from django.contrib.auth import get_user_model
 
-from school_tracker.accounts.enums import UserTypeEnum
+from school_tracker.utils.enums import UserTypeEnum
 from school_tracker.accounts.models import CustomUser
 from school_tracker.chats.models import Message
 from school_tracker.members.models import (
     Parent, 
     Child, 
-    Teacher, 
     Group
 )
 

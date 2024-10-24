@@ -1,4 +1,4 @@
-from school_tracker.accounts.enums import UserTypeEnum
+from school_tracker.utils.enums import UserTypeEnum
 from school_tracker.members.models import Child, Teacher, Parent, Group
 '''
 Custom method used in IsRalatedToChild permission and in get_queryset method in Message List Views.

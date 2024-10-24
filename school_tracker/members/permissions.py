@@ -1,7 +1,7 @@
 from django.core.exceptions import PermissionDenied
 from rest_framework import permissions
 
-from school_tracker.chats.utils import CheckForRoleAndConnectedChild
+from school_tracker.utils import check_for_role_and_child
 
 
 class ParentOnlyViewAndTeacherEdit(permissions.BasePermission):

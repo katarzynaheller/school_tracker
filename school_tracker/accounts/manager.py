@@ -26,3 +26,26 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_("Superuser must have is_superuser set to True"))
 
         return self.create_user(email, password, **extra_fields)
+
+    def all_members_inside_institution(self, institution_id: int):
+            """
+            Return all users inside institution
+            """
+            return CustomUser.objects.filter(institution__id=institution_id)
+
+    def fetch_all_teachers_inside_instutution(self, user_type, institution_id: int):
+        """
+        Return all teachers inside institution
+        """
+        return CustomUser.objects.filter(
+            user_type=UserTypeEnum.teacher,
+            institution__id=institution_id
+        )
+
+    def fetch_all_parents_for_group_students(self, group_id: int):
+        """
+        Return all parents inside group students
+        """
+        return CustomUser.objects.filter(
+            parent__child__group__id=group_id
+        ).distinct()

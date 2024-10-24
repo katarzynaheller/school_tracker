@@ -2,29 +2,40 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 
-CustomUser = get_user_model()
+from school_tracker.utils.enums import AssignedTeacherTypeEnum
 
+CustomUser = get_user_model()
 
 class Teacher(models.Model):
     user =  models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-
+    
     def __str__(self):
         return self.user.email
-
-
+    
 class Group(models.Model):
-    teacher = models.ManyToManyField(Teacher, related_name="groups")
     group_name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.group_name
 
 
+class AssignedTeacher(models.Model):
+    teacher =  models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="assigned_teachers")
+    assigned_type = models.CharField(
+        max_length=20, choices=AssignedTeacherTypeEnum.choices, default = AssignedTeacherTypeEnum.primary
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+            return f"{self.teacher.user.email} - {self.group.group_name}"
+
+
 class Child(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     birth_date = models.DateField()
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_members")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_students")
     
     @property
     def age(self):
