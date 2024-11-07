@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from school_tracker.accounts.serializers import UserCreateUpdateSerializer
+from school_tracker.accounts.serializers import UserSerializer
 from school_tracker.members.models import (
     AssignedTeacher,
     Child, 
@@ -37,8 +37,8 @@ class ChildSerializer(serializers.ModelSerializer):
         
 
 class ParentSerializer(serializers.ModelSerializer):
-    child = ChildSerializer()
-    user = UserCreateUpdateSerializer()
+    child = ChildSerializer
+    user = UserSerializer
     
     class Meta:
         model = Parent
@@ -53,11 +53,11 @@ class ParentSerializer(serializers.ModelSerializer):
         return attrs
 
 class TeacherSerializer(ReadOnlyModelSerializer):
-    user = UserCreateUpdateSerializer()
+    user = UserSerializer
 
     class Meta:
         model = Teacher
-        fields = "user"
+        fields = ("user",)
         read_only_fields = fields
 
 
@@ -77,7 +77,7 @@ class AssignedTeacherSerializer(serializers.Serializer):
 
 class GroupSerializer(serializers.ModelSerializer):
     group_members = serializers.SerializerMethodField()
-    assigner_teacher = serializers.SerializerMethodField()
+    assigned_teacher = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -88,7 +88,11 @@ class GroupSerializer(serializers.ModelSerializer):
             "group_name"
         )
         
-        def get_group_members(self, obj):
-            return [{'full_name': f"{child.first_name} {child.last_name}"} for child in obj.group_students.all()]
+    def get_group_members(self):
+        return [{'full_name': f"{child.first_name} {child.last_name}"} for child in self.instance.group_students.all()]
+    
+    def get_assigned_teacher(self):
+
+        return [(teacher.user.first_name, teacher.user.last_name) for teacher in self.instance.assigned_teachers.all()]
 
         

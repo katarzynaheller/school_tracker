@@ -4,15 +4,6 @@ from school_tracker.utils.check_for_role_and_child import CheckForRoleAndConnect
 from school_tracker.utils.enums import UserTypeEnum
 
 
-IsAuthenticated = [
-    permissions.IsAuthenticated
-]
-
-
-IsAdminUser =[
-    permissions.IsAdminUser
-]
-
 class ParentUserReadOnly(permissions.BasePermission):
     message = "Only Teacher or Admin can edit this data"
 

@@ -9,7 +9,6 @@ User = get_user_model()
 
 class MessageSerializer(ReadOnlyModelSerializer):
     sender = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())    
-    child = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -20,13 +19,8 @@ class MessageSerializer(ReadOnlyModelSerializer):
         )
         read_only_fields = fields
 
-    def get_child(self, obj):
-        if child_id := self.context.get("child_id"):
-            return child_id
-        return None
-
     def validate(self, attrs):
-        child_id = self.context.get("child_id")
+        child_id = self.instance.child.id
 
         if not child_id:
             raise serializers.ValidationError({"child": "Could not identify child"})

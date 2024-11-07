@@ -141,5 +141,5 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "School Tracker API project",
     "DESCRIPTION": "App for tracking child activity in educational institution",
-    "VERSION": "1.0.0",
+    "VERSION": "1.0.1",
 }
