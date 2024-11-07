@@ -2,31 +2,27 @@ from rest_framework import (
     mixins, 
     viewsets
 )
+from rest_framework.permissions import IsAdminUser
+
 from school_tracker.accounts.models import CustomUser
 from school_tracker.accounts.serializers import (
-    UserCreateUpdateSerializer,
+    UserUpdateSerializer,
     UserSerializer    
 )
-from school_tracker.utils.permissions import IsAdminUser
 from school_tracker.utils.dicttools import get_values_from_dict
 
-class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """
+    This endpoint is used as personal data update in user profile
+    """
     permission_classes = [IsAdminUser]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
     serializer_map = {
-        "create": UserCreateUpdateSerializer,
-        "update": UserCreateUpdateSerializer,
-        "partial_update": UserCreateUpdateSerializer
+        "update": UserUpdateSerializer,
+        "partial_update": UserUpdateSerializer
     }
-
-    _user_creation_keys = ["email", "first_name", "last_name", "user_type"]
-
 
     def get_serializer_class(self, *args, **kwargs):
         return self.serializer_map.get(self.action, self.serializer_class)
-
-    def perform_create(self, serializer):
-        data = get_values_from_dict(serializer.validated_data, self._user_creation_keys)
-        user = CustomUser.objects.create(**data)

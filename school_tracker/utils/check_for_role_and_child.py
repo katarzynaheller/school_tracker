@@ -9,11 +9,11 @@ def CheckForRoleAndConnectedChild(user):
         if user.is_superuser:
             return Child.objects.all()
         try:
-            if user.user_role == UserTypeEnum.parent:
+            if user.user_type == UserTypeEnum.parent:
                 parent = Parent.objects.get(user=user.id)
                 children = parent.child.all()
                 return [child.id for child in children]
-            elif user.user_role == UserTypeEnum.teacher:
+            elif user.user_type == UserTypeEnum.teacher:
                 teacher = Teacher.objects.get(user=user.id)
                 groups = teacher.groups.all()
                 children = []

@@ -26,14 +26,10 @@ class UserSerializer(ReadOnlyModelSerializer):
         read_only_fields = fields
 
 
-class UserCreateUpdateSerializer(serializers.ModelSerializer):
+class UserUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=CustomUser.objects.all())])
-    group = serializers.PrimaryKeyRelatedField(
-        queryset=Group.objects.all(), required=False)
-    child = serializers.PrimaryKeyRelatedField(
-        queryset=Child.objects.all(), required=False)
 
     class Meta:
         model = CustomUser
@@ -42,9 +38,8 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "user_type",
-            "group",
-            "child",
         )
+        read_only_fields = ("user_type",)
 
     def validate_updated_email(self, value):
         user_id = self.instance.pk if self.instance else None
@@ -54,10 +49,11 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.instance
-        if self.context['view'].action == 'update':
-            self.validate_updated_email(value=data.get("email"))
-        if user.user_type == UserTypeEnum.parent and not data.get('child'):
-            raise serializers.ValidationError("Parent must be assigned to at least one child.")
-        elif user.user_type == UserTypeEnum.teacher and not data.get('group'):
-            raise serializers.ValidationError("Teacher must be assigned to a group.")
+        if user:
+            if self.context['view'].action == 'update':
+                self.validate_updated_email(value=data.get("email"))
+            if user.user_type == UserTypeEnum.parent and not data.get('child'):
+                raise serializers.ValidationError("Parent must be assigned to at least one child.")
+            elif user.user_type == UserTypeEnum.teacher and not data.get('group'):
+                raise serializers.ValidationError("Teacher must be assigned to a group.")
         return data

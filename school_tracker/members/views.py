@@ -6,6 +6,9 @@ from rest_framework import (
 )
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from drf_spectacular.utils import extend_schema
+
 
 from school_tracker.members.models import (
     AssignedTeacher, 
@@ -21,7 +24,6 @@ from school_tracker.members.serializers import (
 )
 from school_tracker.utils.dicttools import get_values_from_dict
 from school_tracker.utils.permissions import (
-    IsAdminUser,
     ParentUserReadOnly,
     ParentUser,
     TeacherUser,
@@ -37,7 +39,6 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
 
     """
     permission_classes = [IsAdminUser]
-    queryset = Group.objects.all()
     lookup_field = "group_id"
 
     serializer_map = {
@@ -49,20 +50,27 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     }
 
     permission_map = {
-        "create": IsAdminUser,
-        "create_teacher": [IsAdminUser | TeacherUser],
-        "create_group": [IsAdminUser | TeacherUser],
-        "partial_update": [IsAdminUser | TeacherUser],
-        "update": [IsAdminUser | TeacherUser],
-        "institution_members": [IsAdminUser | TeacherUserReadOnly],
-        "children": [IsAdminUser | TeacherUserReadOnly],
-        "group_members": [IsAdminUser | TeacherUser | ParentUserReadOnly]
+        "create": [IsAdminUser],
+        "create_teacher": [IsAdminUser, TeacherUser],
+        "create_group": [IsAdminUser, TeacherUser],
+        "partial_update": [IsAdminUser, TeacherUser],
+        "update": [IsAdminUser, TeacherUser],
+        "institution_members": [IsAdminUser, TeacherUserReadOnly],
+        "children": [IsAdminUser, TeacherUserReadOnly],
+        "group_members": [IsAdminUser, TeacherUser, ParentUserReadOnly]
     }
+
+    def get_queryset(self):
+        group_id = self.kwargs.get(self.lookup_field)
+        if group_id:
+            return Child.objects.filter(group=group_id).select_related('group')
+        else:
+            return Child.objects.select_related('group').all()
 
     def get_permissions(self):
         permission_classes = self.permission_map.get(self.action, self.permission_classes)
         return [permission() for permission in permission_classes]
-
+        
     def get_serializer_class(self, *args, **kwargs):
         return self.serializer_map.get(self.action, self.serializer_class)
     
@@ -90,6 +98,7 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
         '''
         return super().partial_update(request, *args, **kwargs)
 
+    @extend_schema(description='Method POST to create Teacher instance')
     @action(methods=["post"], url_name="create-teacher", detail=False)
     def create_teacher(self, request, *args, **kwargs):
         serializer = AssignedTeacherSerializer(data=request.data)
@@ -99,6 +108,7 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
         teacher = AssignedTeacher.objects.create_with_group_assign(**member_data, **group_data)
         return Response({"detail": f"{teacher.user.first_name} {teacher.user.last_name} created successfully."}, status=201)
     
+    @extend_schema(description="Method to list all members inside particular institution")
     @action(methods=["get"], url_name="institution-members", detail=False)
     def institution_members(self):
         '''
@@ -125,6 +135,7 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
             }
         })
     
+    @extend_schema(description='Method for retrieving all students inside institution')
     @action(methods=["get"], url_name="children", detail=False)
     def children(self):
         '''
@@ -136,8 +147,8 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
             "Children inside institution": {children}
             })
     
-
-    @action(methods=["get"], url_name="group-members", detail=False)
+    @extend_schema(description='Method to retrieve group members')
+    @action(methods=["get"], url_path="(?P<group_id>\d+)", url_name="group-members", detail=False)
     def group_members(self):
         '''
         Retrieve all children inside a Group

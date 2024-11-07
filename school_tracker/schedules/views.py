@@ -11,11 +11,11 @@ from school_tracker.schedules.serializers import (
     DayPlanSerializer
 )
 from school_tracker.utils.dicttools import get_values_from_dict
-from school_tracker.utils.permissions import AdminOrRelatedToChildPermission, IsAuthenticated
+from school_tracker.utils.permissions import AdminOrRelatedToChildPermission
 
 
 class DayPlanViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated, AdminOrRelatedToChildPermission]
+    permission_classes = [AdminOrRelatedToChildPermission]
     serializer_class = DayPlanSerializer
     lookup_field = "child_id"
 
