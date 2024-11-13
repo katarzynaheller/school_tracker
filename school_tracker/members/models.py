@@ -1,8 +1,12 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from school_tracker.utils.enums import AssignedTeacherTypeEnum
+from school_tracker.utils.enums import (
+    AssignedTeacherTypeEnum,
+    UserTypeEnum
+)
 
 CustomUser = get_user_model()
 
@@ -12,6 +16,22 @@ class Teacher(models.Model):
     def __str__(self):
         return self.user.email
     
+    def save(self, *args, **kwargs):
+        if self.user.user_type != UserTypeEnum.teacher:
+            raise ValidationError("Teacher must have user_type set to 'teacher'.")
+        super().save(*args, **kwargs)
+
+class Parent(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.user.email
+    
+    def save(self, *args, **kwargs):
+        if self.user.user_type != UserTypeEnum.parent:
+            raise ValidationError("Parent must have user_type set to 'parent'.")
+        super().save(*args, **kwargs)
+
 class Group(models.Model):
     group_name = models.CharField(max_length=50)
 
@@ -36,6 +56,7 @@ class Child(models.Model):
     last_name = models.CharField(max_length=50)
     birth_date = models.DateField()
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_students")
+    parents = models.ManyToManyField(Parent, related_name="children")
     
     @property
     def age(self):
@@ -57,11 +78,3 @@ class Child(models.Model):
     class Meta:
         verbose_name = "Child"
         verbose_name_plural = "Children"
-
-
-class Parent(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="parents")
-
-    def __str__(self):
-        return self.user.email

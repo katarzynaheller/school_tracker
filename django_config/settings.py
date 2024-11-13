@@ -30,6 +30,7 @@ SECRET_KEY = env.str("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 
 ALLOWED_HOSTS = [
+    "0.0.0.0",
     "127.0.0.1",
     "localhost",
     ".fly.io",
@@ -50,7 +51,7 @@ INSTALLED_APPS = [
     "school_tracker.accounts",
     "school_tracker.members",
     "school_tracker.schedules",
-    "school_tracker.chats",
+    "school_tracker.chats"
 ]
 
 MIDDLEWARE = [

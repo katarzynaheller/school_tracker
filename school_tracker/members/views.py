@@ -2,13 +2,15 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from rest_framework import (
     mixins,
+    status,
     viewsets,
 )
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import (
+    IsAdminUser
+)
 from drf_spectacular.utils import extend_schema
-
 
 from school_tracker.members.models import (
     AssignedTeacher, 
@@ -18,6 +20,8 @@ from school_tracker.members.models import (
 )
 from school_tracker.members.serializers import (
     AssignedTeacherSerializer, 
+    ChildSerializer,
+    GroupCreateSerializer,
     GroupSerializer,
     ParentSerializer, 
     
@@ -32,12 +36,20 @@ from school_tracker.utils.permissions import (
 
 class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """
-    members/parent/<post>/ create parent with children
-    members/group/<post>/ create group
-    List return all children inside a particular group
-    Post enables creating new Child and Group
+    Endpoint responsible for listing and creating members inside a group
 
+    POST -> create Child (group student) with assigned Parent(s) for a group
+    GET -> list all children/students from a group
+    PUT/PATCH -> update Group details
+
+    Custom methods for this endpoint:
+
+    CREATE_TEACHER -> create Teacher with Group assigment
+    CREATE_GROUP -> create Group 
+    INSTITUTION_MEMBERS -> list all members from all groups
+    CHILDREN -> list all children/students inside the institution
     """
+
     permission_classes = [IsAdminUser]
     lookup_field = "group_id"
 
@@ -50,14 +62,13 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
     }
 
     permission_map = {
-        "create": [IsAdminUser],
+        "create": [IsAdminUser, TeacherUser],
         "create_teacher": [IsAdminUser, TeacherUser],
         "create_group": [IsAdminUser, TeacherUser],
         "partial_update": [IsAdminUser, TeacherUser],
         "update": [IsAdminUser, TeacherUser],
         "institution_members": [IsAdminUser, TeacherUserReadOnly],
         "children": [IsAdminUser, TeacherUserReadOnly],
-        "group_members": [IsAdminUser, TeacherUser, ParentUserReadOnly]
     }
 
     def get_queryset(self):
@@ -83,36 +94,48 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
         '''
         member_data = get_values_from_dict(serializer.validated_data.get('user'), self._member_creation_keys)
         child_data = get_values_from_dict(serializer.validated_data.get('child'), self._child_creation_keys)
-        parent = Parent.objects.create_with_child(**member_data, **child_data)
-        return parent
+        child_data["group_id"] = self.kwargs.get("group_id")
+        child = Child.objects.create_with_parent(**member_data, **child_data)
+        return Response({"detail": f"{child.first_name} {child.last_name} created successfully."}, status=status.HTTP_201_CREATED)
     
     def perform_update(self, serializer):
         '''
-        Default PUT method for members endpoint is for updating Group details
+        Default PUT method for updating Group details
         '''
         serializer.save()
 
     def partial_update(self, request, *args, **kwargs):
         '''
-        Default PATCH method for members endpoint is for updating Group details
+        Default PATCH method for updating Group details
         '''
         return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(description='Method POST to create Teacher instance')
-    @action(methods=["post"], url_name="create-teacher", detail=False)
+    @action(methods=["post"], url_path="group/(?P<id>[^/.]+)/create-teacher", url_name="create-teacher", detail=False, serializer_class=AssignedTeacherSerializer)
     def create_teacher(self, request, *args, **kwargs):
-        serializer = AssignedTeacherSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         member_data = get_values_from_dict(serializer.validated_data.get('user'), self._member_creation_keys)
-        group_data = self.request.data.get('group')
-        teacher = AssignedTeacher.objects.create_with_group_assign(**member_data, **group_data)
-        return Response({"detail": f"{teacher.user.first_name} {teacher.user.last_name} created successfully."}, status=201)
+        member_data["assigned_type"] = request.data["assigned_type"]
+        group_id = self.kwargs.get("group_id")
+        teacher = AssignedTeacher.objects.create_with_group_assign(**member_data, **group_id)
+        return Response({"detail": f"{teacher.user.first_name} {teacher.user.last_name} created successfully."}, status=status.HTTP_201_CREATED)
     
-    @extend_schema(description="Method to list all members inside particular institution")
+    @extend_schema(description='Method POST to create Group instance')
+    @action(methods=["post"], url_path="group/(?P<id>[^/.]+)/create", url_name="create-group", detail=False, serializer_class=GroupCreateSerializer)
+    def create_group(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group_data = serializer.validated_data
+        group = Group.objects.create(**group_data)
+        return Response({"detail": f"{group.group_name} created successfully."}, status=status.HTTP_201_CREATED)
+
+
+    @extend_schema(description="Method to list all members from all groups inside particular institution")
     @action(methods=["get"], url_name="institution-members", detail=False)
     def institution_members(self):
         '''
-        Retrieve all members inside institution
+        Retrieve all members from all groups inside the institution
         '''
         group_id = self.request.query_params.get("group_id")
         try:
@@ -147,22 +170,20 @@ class MembersViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retr
             "Children inside institution": {children}
             })
     
-    @extend_schema(description='Method to retrieve group members')
-    @action(methods=["get"], url_path="(?P<group_id>\d+)", url_name="group-members", detail=False)
-    def group_members(self):
+    @extend_schema(description='Method for updating child details')
+    @action(methods=["patch"], url_path="child/(?P<id>[^/.]+)/update", url_name="child-update", detail=True)
+    def child_update(self, request, id=None):
         '''
-        Retrieve all children inside a Group
+        Method for updating Child details
         '''
-        group_id = self.request.query_params.get("group_id")
         try:
-            group = Group.objects.get(id=group_id)
-        except Group.DoesNotExist:
-            raise Http404("Group not found")
-            
-        children = [child.first_name for child in group.group_members.all()]
-
-        return Response({
-            f"Students for {group.group_name}":{
-            "children": {children}
-            }
-        })
+            child = Child.objects.get(id=id)
+        except Child.DoesNotExist:
+            return Response({"error": "Child not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ChildSerializer(child, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

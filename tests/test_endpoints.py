@@ -22,13 +22,10 @@ class CheckPermissionForEndpoints(APITestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.user_teacher = CustomUserFactory()
-        cls.teacher = TeacherFactory(user=cls.user_teacher)
-
-        cls.user_parent = CustomUserFactory()
-        cls.parent = ParentFactory(user=cls.user_parent)
-
+        cls.teacher = TeacherFactory()
         cls.group = GroupFactory(teacher=[cls.teacher])
+
+        cls.parent = ParentFactory()
         cls.child = ChildFactory(group=cls.group) 
 
 

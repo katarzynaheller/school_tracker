@@ -6,9 +6,17 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from school_tracker.members.models import Child, Parent,Teacher,Group
-from school_tracker.members.serializers import ChildSerializer, ParentSerializer, GroupSerializer
-
+from school_tracker.members.models import (
+    Child, 
+    Group,
+    Parent,
+    Teacher
+)
+from school_tracker.members.serializers import (
+    ChildSerializer, 
+    GroupSerializer
+)
+from school_tracker.utils.enums import UserTypeEnum
 
 CustomUser = get_user_model()
 
@@ -20,7 +28,7 @@ class MembersTests(TestCase):
             first_name = 'Test',
             last_name = "User",
             password = 'secret1234',
-            user_type = CustomUser.PARENT
+            user_type = UserTypeEnum.parent
         )
 
         self.userteacher = CustomUser.objects.create_user(
@@ -28,39 +36,40 @@ class MembersTests(TestCase):
             first_name = 'Test',
             last_name = "User",
             password = 'secret1234',
-            user_type = CustomUser.TEACHER
+            user_type = UserTypeEnum.teacher
         )
-        self.parent = Parent.objects.create(user=self.userparent)
-        self.child = Child.objects.create(
-            full_name = 'Test Child',
-            birth_date = date(2022,3,6),
-            parent = self.parent
-        )
-        self.teacher = Teacher.objects.create(user = self.userteacher)
+
         self.group = Group.objects.create(
-            teacher = self.teacher,
             group_name = "Ants"
         )
+        self.teacher = Teacher.objects.create(user = self.userteacher)
 
-        self.group.members.add(self.child)
 
+        self.parent = Parent.objects.create(user=self.userparent)
+        self.child = Child.objects.create(
+            first_name = 'Test',
+            last_name = "Child",
+            birth_date = date(2022,3,6),
+            group = self.group,
+        )
+        self.child.parents.add(self.parent)
 
     def test_parent_model(self):
         self.assertEqual(str(self.parent), "testuser@mail.com")
 
     def test_child_model(self):
-        self.assertEqual(self.child.age, 1)
+        self.assertEqual(self.child.age, 2)
         self.assertNotEqual(self.child.age, 7)
         self.assertEqual(str(self.child), 'Test Child')
-        self.assertIn(self.child, self.parent.child.all())
+        self.assertIn(self.child, self.parent.children.all())
 
     def test_teacher_model(self):
         self.assertEqual(str(self.teacher), "testteacher@mail.com")
 
     def test_group_model(self):
         self.assertEqual(str(self.group), "Ants")
-        self.assertEqual(self.group.members.count(), 1)
-        self.assertIn(self.child, self.group.members.all())
+        self.assertEqual(self.group.group_students.count(), 1)
+        self.assertIn(self.child, self.group.group_students.all())
 
 
 class MembersDetailViewTests(APITestCase):
@@ -110,7 +119,7 @@ class MembersListViewTests(APITestCase):
             last_name = "Teacher",
             password = 'secret1234',
             is_staff = True,
-            user_type = CustomUser.TEACHER
+            user_type = UserTypeEnum.teacher
         )
 
         self.userparent = CustomUser.objects.create_user(
@@ -118,7 +127,7 @@ class MembersListViewTests(APITestCase):
             first_name = 'Test',
             last_name = "Parent",
             password = 'secret1234',
-            user_type = CustomUser.PARENT
+            user_type = UserTypeEnum.parent
         )
 
         self.unrelatedteacher = CustomUser.objects.create_user(
@@ -127,40 +136,40 @@ class MembersListViewTests(APITestCase):
             last_name = "Teacher",
             password = 'secret1234',
             is_staff = True,
-            user_type = CustomUser.TEACHER
+            user_type = UserTypeEnum.teacher
         )
         
         self.teacher = Teacher.objects.create(user = self.userteacher)
         self.parent = Parent.objects.create(user = self.userparent)
         self.teacher1 = Teacher.objects.create(user = self.unrelatedteacher)
-        
-        self.child = Child.objects.create(
-            full_name = 'Test Child',
-            birth_date = date(2022,3,6),
-            parent = self.parent
-        )
-
-        self.child1 = Child.objects.create(
-            full_name = 'One Child',
-            birth_date = date(2022,3,6),
-            parent = self.parent
-        )
         self.group = Group.objects.create(
-            teacher = self.teacher,
             group_name = "Ants"
         )
+        self.child = Child.objects.create(
+            first_name = 'Test',
+            last_name = "Child",
+            birth_date = date(2022,3,6),
+            group = self.group
+        )
+        self.child.parents.add(self.parent)
 
-        self.group.members.add(self.child)
+        self.child = Child.objects.create(
+            first_name = 'Test1',
+            last_name = "Child1",
+            birth_date = date(2022,3,6),
+            group = self.group
+        )
+        self.child.parents.add(self.parent)
+        
+
         self.url = reverse('children_list')
 
     def test_teacher_can_read_list_children(self):
-        #authenticate as a teacher user
+        # when
         self.client.force_authenticate(user = self.userteacher)
-
-        #make a GET request to the tested URL
         response = self.client.get(self.url)
 
-        #compare the response data from the API with the expected serialized data.
+        # then
         child = Child.objects.all()
         serializer = ChildSerializer(child, many = True)
         
