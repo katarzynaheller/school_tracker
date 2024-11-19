@@ -13,8 +13,19 @@ from school_tracker.utils.enums import AssignedTeacherTypeEnum
 from school_tracker.utils.serializers import ReadOnlyModelSerializer
 
 
+class ParentSerializer(serializers.ModelSerializer):
+    user = UserSerializer
+    
+    class Meta:
+        model = Parent
+        fields = (
+            "user",
+        )
+
+
 class ChildSerializer(serializers.ModelSerializer):
     birth_date = serializers.DateField()
+    parents = ParentSerializer(many=True)
     group = serializers.PrimaryKeyRelatedField(
         queryset = Group.objects.all(),
         required = True
@@ -26,32 +37,21 @@ class ChildSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "birth_date",
-            "group"
+            "group",
+            "parents"
         )
         read_only_fields = (
-            "parent",
+            "parents",
             "age",
             "first_name",
             "last_name"
         )
-        
-
-class ParentSerializer(serializers.ModelSerializer):
-    child = ChildSerializer
-    user = UserSerializer
-    
-    class Meta:
-        model = Parent
-        fields = (
-            "user",
-            "child",
-        )
-    
     def validate(self, attrs):
-        if not attrs.get('child'):
-            raise serializers.ValidationError('Parent must be assigned to at least one child')
+        if not attrs.get('parents'):
+            raise serializers.ValidationError('Child must be assigned to at least one parent')
         return attrs
 
+    
 class TeacherSerializer(ReadOnlyModelSerializer):
     user = UserSerializer
 
@@ -73,26 +73,34 @@ class AssignedTeacherSerializer(serializers.Serializer):
     def validate_assigned_type(self, obj):
         if not obj.assigned_type in [AssignedTeacherTypeEnum.primary, AssignedTeacherTypeEnum.support]:
             raise ValueError('When assigning you need to set assign type to teacher')
+        else:
+            print("Teacher has no assigned type")
     
 
 class GroupSerializer(serializers.ModelSerializer):
     group_members = serializers.SerializerMethodField()
-    assigned_teacher = serializers.SerializerMethodField()
+    assigned_teachers = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
         fields = (
             "id",
             "group_members",
-            "assigned_teacher",
+            "assigned_teachers",
             "group_name"
         )
         
-    def get_group_members(self):
-        return [{'full_name': f"{child.first_name} {child.last_name}"} for child in self.instance.group_students.all()]
+    def get_group_members(self, obj):
+        return [{'full_name': f"{child.first_name} {child.last_name}"} for child in obj.group_students.all()]
     
-    def get_assigned_teacher(self):
+    def get_assigned_teachers(self, obj):
+        if obj.assigned_teachers:
+            return [assigned_teacher.teacher.user.first_name for assigned_teacher in obj.assigned_teachers.all()]
+        return None
 
-        return [(teacher.user.first_name, teacher.user.last_name) for teacher in self.instance.assigned_teachers.all()]
 
-        
+class GroupCreateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    class Meta:
+        model = Group
+        fields = ("name",)

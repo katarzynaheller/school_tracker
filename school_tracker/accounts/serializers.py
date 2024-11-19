@@ -1,14 +1,11 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from school_tracker.accounts.models import CustomUser
-from school_tracker.members.models import (
-    Child,
-    Group,
-    Parent
-)
-from school_tracker.utils.serializers import ReadOnlyModelSerializer
 from school_tracker.utils.enums import UserTypeEnum
+from school_tracker.utils.serializers import ReadOnlyModelSerializer
+
 
 class UserSerializer(ReadOnlyModelSerializer):
     email = serializers.EmailField(
@@ -39,7 +36,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "last_name",
             "user_type",
         )
-        read_only_fields = ("user_type",)
 
     def validate_updated_email(self, value):
         user_id = self.instance.pk if self.instance else None
@@ -57,3 +53,45 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             elif user.user_type == UserTypeEnum.teacher and not data.get('group'):
                 raise serializers.ValidationError("Teacher must be assigned to a group.")
         return data
+    
+class MeUpdateSerializer(UserUpdateSerializer):
+
+    class Meta(UserUpdateSerializer.Meta):
+        model = CustomUser
+        fields = UserUpdateSerializer.Meta.fields
+        read_only_fields = ("user_type",)
+
+
+
+class GenericPasswordUpdateSerializer(ReadOnlyModelSerializer):
+    password = serializers.CharField(
+        write_only=True, 
+        allow_null=False, 
+        required=True, 
+        validators=[validate_password])
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            "password",
+        )
+
+
+class PasswordUpdateSerializer(GenericPasswordUpdateSerializer):
+    old_password = serializers.CharField(write_only=True, required=True)
+
+    class Meta(GenericPasswordUpdateSerializer.Meta):
+        fields = GenericPasswordUpdateSerializer.Meta.fields + (
+            "old_password",
+        )
+
+    def validate(self, data):
+        self.validate_previous_password(data.get('old_password'))
+        return data
+
+    def validate_previous_password(self, password):
+        user = self.context.get('request').user
+        if not user.check_password(password):
+            raise serializers.ValidationError({
+                "password": "Old password is incorrect. Please enter a valid password."
+            })

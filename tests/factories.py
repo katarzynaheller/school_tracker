@@ -1,18 +1,19 @@
 import factory
-import random
+from factory import Faker
+from factory.django import DjangoModelFactory
 from django.contrib.auth import get_user_model
 
-from school_tracker.utils.enums import UserTypeEnum
-from school_tracker.accounts.models import CustomUser
 from school_tracker.chats.models import Message
 from school_tracker.members.models import (
     Parent, 
     Child, 
-    Group
+    Group,
+    Teacher
 )
+from school_tracker.utils.enums import UserTypeEnum
 
 
-class CustomUserFactory(factory.django.DjangoModelFactory):
+class CustomUserFactory(DjangoModelFactory):
     class Meta:
         model = get_user_model()
 
@@ -20,29 +21,24 @@ class CustomUserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
     password = factory.Faker("password")
+    user_type = UserTypeEnum.unset
 
-
-class TeacherFactory(factory.django.DjangoModelFactory):
+class TeacherFactory(DjangoModelFactory):
     class Meta:
         model = Teacher
 
-    user = factory.SubFactory(CustomUserFactory, user_type = UserTypeEnum.teacher)
+    user = factory.SubFactory(CustomUserFactory, user_type=UserTypeEnum.teacher)
+
         
 
-class GroupFactory(factory.django.DjangoModelFactory):
+class GroupFactory(DjangoModelFactory):
     class Meta:
         model = Group
 
     group_name = factory.Faker("name")
-    @factory.post_generation
-    def teacher(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            self.teacher.set(extracted)
 
 
-class ChildFactory(factory.django.DjangoModelFactory):
+class ChildFactory(DjangoModelFactory):
     class Meta:
         model = Child
 
@@ -52,15 +48,17 @@ class ChildFactory(factory.django.DjangoModelFactory):
     group = factory.SubFactory(GroupFactory)
 
 
-class ParentFactory(factory.django.DjangoModelFactory):
+class ParentFactory(DjangoModelFactory):
     class Meta:
         model = Parent
 
-    user = factory.SubFactory(CustomUserFactory, user_type = UserTypeEnum.parent)
+    user = factory.SubFactory(
+        CustomUserFactory, 
+        user_type = UserTypeEnum.parent)
     child = factory.SubFactory(ChildFactory)
 
 
-class MessageFactory(factory.django.DjangoModelFactory):
+class MessageFactory(DjangoModelFactory):
     class Meta:
         model = Message
 

@@ -5,17 +5,17 @@ from rest_framework import (
 )
 from rest_framework.response import Response
 
+from school_tracker.members.permissions import TeacherOrParentRelatedToChildPermission
 from school_tracker.schedules.models import DayPlan
 from school_tracker.schedules.serializers import (
     DayPlanCreateUpdateSerializer,
     DayPlanSerializer
 )
 from school_tracker.utils.dicttools import get_values_from_dict
-from school_tracker.utils.permissions import AdminOrRelatedToChildPermission
 
 
 class DayPlanViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    permission_classes = [AdminOrRelatedToChildPermission]
+    permission_classes = [TeacherOrParentRelatedToChildPermission]
     serializer_class = DayPlanSerializer
     lookup_field = "child_id"
 

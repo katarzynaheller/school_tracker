@@ -14,11 +14,11 @@ from school_tracker.chats.serializers import (
     MessageSerializer
 )
 from school_tracker.utils.dicttools import get_values_from_dict
-from school_tracker.utils.permissions import AdminOrRelatedToChildPermission
+from school_tracker.members.permissions import TeacherOrParentRelatedToChildPermission
 
 
 class MessageViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated, AdminOrRelatedToChildPermission]
+    permission_classes = [IsAuthenticated, TeacherOrParentRelatedToChildPermission]
     serializer_class = MessageSerializer
     lookup_field = "child_id"
 

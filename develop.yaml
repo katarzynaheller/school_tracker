@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  web:
+  app:
     build:
       context: .
       dockerfile: ./compose/develop/Dockerfile
@@ -12,6 +12,8 @@ services:
       - ./.envs/.develop/.django
     depends_on: 
       - db
+    volumes:
+      - .:/app
 
   db:
     image: postgres:13

@@ -12,6 +12,7 @@ environs==11.0.0
 factory_boy==3.3.1
 Faker==30.8.2
 inflection==0.5.1
+ipdb
 jsonschema==4.23.0
 jsonschema-specifications==2024.10.1
 marshmallow==3.23.1
