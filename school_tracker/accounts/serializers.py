@@ -36,7 +36,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "last_name",
             "user_type",
         )
-        read_only_fields = ("user_type",)
 
     def validate_updated_email(self, value):
         user_id = self.instance.pk if self.instance else None
@@ -54,6 +53,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             elif user.user_type == UserTypeEnum.teacher and not data.get('group'):
                 raise serializers.ValidationError("Teacher must be assigned to a group.")
         return data
+    
+class MeUpdateSerializer(UserUpdateSerializer):
+
+    class Meta(UserUpdateSerializer.Meta):
+        model = CustomUser
+        fields = UserUpdateSerializer.Meta.fields
+        read_only_fields = ("user_type",)
+
 
 
 class GenericPasswordUpdateSerializer(ReadOnlyModelSerializer):

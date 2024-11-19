@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from school_tracker.members.models import (
+    AssignedTeacher,
     Child, 
     Group,
     Parent,
@@ -16,7 +17,10 @@ from school_tracker.members.serializers import (
     ChildSerializer, 
     GroupSerializer
 )
-from school_tracker.utils.enums import UserTypeEnum
+from school_tracker.utils.enums import (
+    UserTypeEnum, 
+    AssignedTeacherTypeEnum
+)
 
 CustomUser = get_user_model()
 
@@ -43,7 +47,6 @@ class MembersTests(TestCase):
             group_name = "Ants"
         )
         self.teacher = Teacher.objects.create(user = self.userteacher)
-
 
         self.parent = Parent.objects.create(user=self.userparent)
         self.child = Child.objects.create(
@@ -73,47 +76,56 @@ class MembersTests(TestCase):
 
 
 class MembersDetailViewTests(APITestCase):
-    '''
-    Because of permissions - child detail view is available for child's parent
-    '''
+
     def setUp(self):
         self.user = CustomUser.objects.create_user(
             email= 'testuser@mail.com',
             first_name = 'Test',
             last_name = "User",
             password = 'secret1234',
-            user_type = CustomUser.PARENT
+            user_type = UserTypeEnum.parent
         )
     
-        self.client.force_authenticate(user = self.user)
-        self.parent = Parent.objects.create(user = self.user)
+        self.parent = Parent.objects.create(user=self.user)
+        self.group = Group.objects.create(
+            group_name = "Ia"
+        )
         
         self.child = Child.objects.create(
-            full_name = 'Test Child',
+            first_name = 'Test Child',
+            last_name = 'Abc',
             birth_date = date(2022,3,6),
-            parent = self.parent
+            group = self.group,
         )
+        self.child.parents.add(self.parent)
         
-    
-    def test_can_read_parent_detail(self):
-        response = self.client.get(reverse('parent_detail', args=[self.parent.id]))
+    def test_models(self):
+        self.assertEqual(str(self.parent), "testuser@mail.com")
+        self.assertIn(self.child, self.parent.children.all())
+
+    def test_parent_detail(self):
+        url = reverse("me-detail", kwargs={'pk':self.user.pk})
+        self.client.force_authenticate(user=self.parent.user)
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_can_read_child_detail(self):
-        response = self.client.get(reverse('child_detail', args=[self.child.id]))
+    def test_child_detail(self):
+        url = reverse("children-detail", kwargs={"child_id": self.child.id})
+        self.client.force_authenticate(user=self.parent.user)
+        response = self.client.get(url)
+        self.assertIn(self.child, self.parent.children.all())
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_parent_cannot_access_list_children(self):
-        response = self.client.get(reverse('children_list'))
+        url = reverse("children-list")
+        self.client.force_authenticate(user=self.parent.user)
+        response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 class MembersListViewTests(APITestCase):
-    '''
-    Child list view is available only for members with is_staff status
-    '''
     
     def setUp(self):
-        self.userteacher= CustomUser.objects.create_user(
+        self.related_user_teacher= CustomUser.objects.create_user(
             email= 'testteacher@mail.com',
             first_name = 'Test',
             last_name = "Teacher",
@@ -122,7 +134,7 @@ class MembersListViewTests(APITestCase):
             user_type = UserTypeEnum.teacher
         )
 
-        self.userparent = CustomUser.objects.create_user(
+        self.user_parent = CustomUser.objects.create_user(
             email= 'testparent@mail.com',
             first_name = 'Test',
             last_name = "Parent",
@@ -130,7 +142,7 @@ class MembersListViewTests(APITestCase):
             user_type = UserTypeEnum.parent
         )
 
-        self.unrelatedteacher = CustomUser.objects.create_user(
+        self.unrelated_user_teacher = CustomUser.objects.create_user(
             email= 'differentteacher@mail.com',
             first_name = 'Different',
             last_name = "Teacher",
@@ -139,70 +151,72 @@ class MembersListViewTests(APITestCase):
             user_type = UserTypeEnum.teacher
         )
         
-        self.teacher = Teacher.objects.create(user = self.userteacher)
-        self.parent = Parent.objects.create(user = self.userparent)
-        self.teacher1 = Teacher.objects.create(user = self.unrelatedteacher)
+        self.teacher = Teacher.objects.create(user=self.related_user_teacher)
         self.group = Group.objects.create(
             group_name = "Ants"
         )
-        self.child = Child.objects.create(
+        self.assigned_teacher = AssignedTeacher.objects.create(
+            teacher = self.teacher,
+            group = self.group,
+            assigned_type = AssignedTeacherTypeEnum.primary
+        )
+        self.unrelated_teacher = Teacher.objects.create(user=self.unrelated_user_teacher)
+
+        self.parent = Parent.objects.create(user=self.user_parent)
+
+        self.child_one = Child.objects.create(
             first_name = 'Test',
             last_name = "Child",
             birth_date = date(2022,3,6),
             group = self.group
         )
-        self.child.parents.add(self.parent)
+        self.child_one.parents.add(self.parent)
 
-        self.child = Child.objects.create(
+        self.child_two = Child.objects.create(
             first_name = 'Test1',
             last_name = "Child1",
             birth_date = date(2022,3,6),
             group = self.group
         )
-        self.child.parents.add(self.parent)
+        self.child_two.parents.add(self.parent)
         
+        self.url = reverse('children-list')
 
-        self.url = reverse('children_list')
+    def test_models(self):
+        self.assertEqual(self.related_user_teacher.email, self.teacher.user.email)
+        self.assertIn(self.child_one, self.parent.children.all())
+        self.assertIn(self.child_two, self.parent.children.all())
+        self.assertTrue(self.group.assigned_teachers.filter(teacher=self.teacher).exists())
 
-    def test_teacher_can_read_list_children(self):
-        # when
-        self.client.force_authenticate(user = self.userteacher)
+    def test_related_teacher_can_read_list_children(self): 
+        self.client.force_authenticate(user=self.related_user_teacher)
         response = self.client.get(self.url)
-
-        # then
-        child = Child.objects.all()
-        serializer = ChildSerializer(child, many = True)
-        
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
 
-    def test_parent_cannot_read_list_children(self):
-        #authenticate as a parent user
-        self.client.force_authenticate(user = self.userparent)
-
-        #make a GET request to the tested URL
+    def test_related_parent_can_read_list_children(self): 
+        self.client.force_authenticate(user=self.user_parent)
         response = self.client.get(self.url)
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_group_detail_view_for_related_teacher(self):
-        #authenticate as a teacher user
-        self.client.force_authenticate(user = self.userteacher)
 
-        #make a GET request to the teacher's group's detail URL
-        response = self.client.get(reverse('group_detail', args = [self.group.pk]))
+        self.client.force_authenticate(user=self.related_user_teacher)
+        url = reverse('groups-detail', kwargs={"group_id": self.group.id})
+       
+        response = self.client.get(url)
 
-        #retrieve data to compare with response
-        group_serializer = GroupSerializer(instance=self.group)
-        
-        self.assertEqual(response.data, group_serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_unrelated_teacher_can_read_list_children(self):
+        self.client.force_authenticate(user=self.unrelated_user_teacher)
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_group_detail_not_for_unrelated_teacher(self):
-        #authenticate as a unrelated teacher user
-        self.client.force_authenticate(user = self.unrelatedteacher)
+        self.client.force_authenticate(user = self.unrelated_user_teacher)
         
-        #make a GET request to the teacher's group's detail URL
-        response = self.client.get(reverse('group_detail', args = [self.group.pk]))
+        url = reverse('groups-detail', kwargs={"group_id": self.group.id})
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

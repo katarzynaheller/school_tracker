@@ -3,6 +3,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from school_tracker.members.manager import (
+    AssignedTeacherManager,
+    ChildManager,
+    GroupManager,
+    ParentManager,
+)
 from school_tracker.utils.enums import (
     AssignedTeacherTypeEnum,
     UserTypeEnum
@@ -24,6 +30,8 @@ class Teacher(models.Model):
 class Parent(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
+    objects = ParentManager()
+
     def __str__(self):
         return self.user.email
     
@@ -32,8 +40,11 @@ class Parent(models.Model):
             raise ValidationError("Parent must have user_type set to 'parent'.")
         super().save(*args, **kwargs)
 
+
 class Group(models.Model):
     group_name = models.CharField(max_length=50)
+
+    objects = GroupManager()
 
     def __str__(self):
         return self.group_name
@@ -47,8 +58,10 @@ class AssignedTeacher(models.Model):
     )
     assigned_at = models.DateTimeField(auto_now_add=True)
 
+    objects = AssignedTeacherManager()
+
     def __str__(self):
-            return f"{self.teacher.user.email} - {self.group.group_name}"
+            return f"{self.teacher.user.email}"
 
 
 class Child(models.Model):
@@ -58,6 +71,8 @@ class Child(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_students")
     parents = models.ManyToManyField(Parent, related_name="children")
     
+    objects = ChildManager()
+
     @property
     def age(self):
         today = timezone.now().date()
