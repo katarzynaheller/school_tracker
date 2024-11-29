@@ -93,7 +93,7 @@ class TeacherOrParentRelatedToGroupPermission(permissions.BasePermission):
         
         if user.user_type == UserTypeEnum.parent:
             
-            parent=Parent.objects.get(id=user.id)
+            parent=Parent.objects.get(user__id=user.id)
             for child in group.group_students.all():
                 if parent in child.parents.all():
                     return True

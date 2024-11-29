@@ -61,15 +61,29 @@ class TeacherSerializer(ReadOnlyModelSerializer):
         read_only_fields = fields
 
 
-class AssignedTeacherSerializer(serializers.Serializer):
+class AssignedTeacherSerializer(serializers.ModelSerializer):
     teacher = TeacherSerializer()
     group = serializers.SerializerMethodField()
     assigned_type = serializers.CharField()
     assigned_at = serializers.DateTimeField()
 
+    class Meta:
+        model = AssignedTeacher
+        fields = (
+            "teacher",
+            "group",
+            "assigned_type",
+            "assigned_at",
+        )
+        read_only_fields = fields
+
     def get_group(self, obj):
-        return [group.group_name for group in obj.groups.all()]
+        return [group.group_name for group in Group.objects.filter(assigned_teachers=obj)]
     
+    def validate_teacher(self, obj):
+        if not obj.teacher:
+            raise serializers.ValidationError("No teacher instance provided")
+        
     def validate_assigned_type(self, obj):
         if not obj.assigned_type in [AssignedTeacherTypeEnum.primary, AssignedTeacherTypeEnum.support]:
             raise ValueError('When assigning you need to set assign type to teacher')

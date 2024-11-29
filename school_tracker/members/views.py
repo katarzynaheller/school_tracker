@@ -7,6 +7,7 @@ from rest_framework import (
 )
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from drf_spectacular.utils import extend_schema
 
@@ -14,6 +15,7 @@ from school_tracker.members.models import (
     AssignedTeacher, 
     Child,
     Group,
+    Parent
 )
 from school_tracker.members.serializers import (
     AssignedTeacherSerializer,
@@ -36,23 +38,22 @@ class MemberViewSet(mixins.ListModelMixin,
 
     """
     Custom methods for this endpoint:
-    LIST -> all members related to particular group (children, parents, teachers)
+    LIST -> all members in all groups (children, parents, teachers)
     """
-    permission_classes = [TeacherOrParentRelatedToGroupPermission]
-    lookup_field = "group_id"
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        if group_id:=self.kwargs.get("group_id"):
-            teachers = Group.objects.filter(id=group_id).with_related_teachers()
-            children = Group.objects.filter(id=group_id).with_related_children()
-            parents = Group.objects.filter(id=group_id).with_related_parents()
+        for group in Group.objects.all():
+            teachers = group.assigned_teachers.all()
+            children = group.group_students.all()
+            parents = Parent.objects.filter(children__group=group).distinct()
 
             teacher_serializer = AssignedTeacherSerializer(teachers, many=True)
             children_serializer = ChildSerializer(children, many=True)
             parent_serializer = ParentSerializer(parents, many=True)
 
             return Response({
-                "Members for this group"
+                f"Members for {group.group_name}"
                 "teachers": teacher_serializer.data,
                 "children": children_serializer.data,
                 "parents": parent_serializer.data,
@@ -66,10 +67,10 @@ class GroupViewSet(mixins.CreateModelMixin,
                    viewsets.GenericViewSet):
     
     """
-    Endpoint responsible for managing users related to aprticular group
+    Endpoint responsible for managing users related to a prticular group
 
     GET -> retrieve group details and group students
-    LIST -> list all children from all groups
+    LIST -> list all members related to group
     POST -> create group student with assigned Parent(s)
     PUT/PATCH -> update Group details
 
@@ -106,6 +107,7 @@ class GroupViewSet(mixins.CreateModelMixin,
         if group_id:
             return Group.objects.prefetch_related('group_students', 'assigned_teachers').get(id=group_id)
         raise Http404("Group not found")
+    
         
     def perform_create(self, serializer):
         '''

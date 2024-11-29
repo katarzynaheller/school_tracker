@@ -20,7 +20,7 @@ class MessageModelTest(TestCase):
             first_name = 'User',
             last_name = "Teacher",
             password = 'secret1234',
-            user_type = CustomUser.TEACHER
+            
         )
 
         #create message's sender
@@ -29,23 +29,23 @@ class MessageModelTest(TestCase):
             first_name = 'User',
             last_name = "Parent",
             password = 'secret1234',
-            user_type = CustomUser.PARENT
+            
         )
 
         self.parent = Parent.objects.create(user = self.userparent)
         self.teacher = Teacher.objects.create(user = self.userteacher)
         
+        self.group = Group.objects.create(
+            group_name = "Ants"
+        )
         #child id included as message's topic
         self.child = Child.objects.create(
             full_name = 'Test Child',
             birth_date = date(2022,3,6),
-            parent = self.parent
+            group = self.group,
         )
-
-        self.group = Group.objects.create(
-            teacher = self.teacher,
-            group_name = "Ants"
-        )
+        self.child.parents.add(self.parent)
+        
 
         self.message  = Message.objects.create(
             sender = self.userparent,

@@ -6,7 +6,7 @@ def has_access_to_child(child: Child, user: CustomUser):
     """Checks if user has a child assigned in any way"""
     return (
         CustomUser.is_admin_user(user)
-        or user in child.group.teacher.all()
+        or user in child.group.assigned_teachers.all()
         or user in child.parents.all()
     )
 

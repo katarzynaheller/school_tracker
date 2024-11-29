@@ -27,6 +27,7 @@ class Teacher(models.Model):
             raise ValidationError("Teacher must have user_type set to 'teacher'.")
         super().save(*args, **kwargs)
 
+
 class Parent(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
@@ -51,7 +52,7 @@ class Group(models.Model):
 
 
 class AssignedTeacher(models.Model):
-    teacher =  models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teacher =  models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="groups")
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="assigned_teachers")
     assigned_type = models.CharField(
         max_length=20, choices=AssignedTeacherTypeEnum.choices, default = AssignedTeacherTypeEnum.primary
