@@ -48,10 +48,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if user:
             if self.context['view'].action == 'update':
                 self.validate_updated_email(value=data.get("email"))
-            if user.user_type == UserTypeEnum.parent and not data.get('child'):
-                raise serializers.ValidationError("Parent must be assigned to at least one child.")
-            elif user.user_type == UserTypeEnum.teacher and not data.get('group'):
-                raise serializers.ValidationError("Teacher must be assigned to a group.")
         return data
     
 class MeUpdateSerializer(UserUpdateSerializer):

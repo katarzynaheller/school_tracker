@@ -26,6 +26,7 @@ from school_tracker.members.serializers import (
     
 )
 from school_tracker.utils.dicttools import get_values_from_dict
+from school_tracker.utils.enums import UserTypeEnum
 from school_tracker.members.permissions import (
     TeacherOrIsStaffPermission,
     TeacherOrParentRelatedToChildPermission,
@@ -37,8 +38,7 @@ class MemberViewSet(mixins.ListModelMixin,
                     viewsets.GenericViewSet):
 
     """
-    Custom methods for this endpoint:
-    LIST -> all members in all groups (children, parents, teachers)
+    LIST -> all members sorted by groups (children, parents, teachers)
     """
     permission_classes = [IsAuthenticated]
 
@@ -80,7 +80,6 @@ class GroupViewSet(mixins.CreateModelMixin,
 
     queryset = Group.objects.all()
     permission_classes = [TeacherOrIsStaffPermission]
-    lookup_field = "group_id"
     serializer_class = GroupSerializer
 
     serializer_map = {
@@ -101,13 +100,6 @@ class GroupViewSet(mixins.CreateModelMixin,
     
     _member_creation_keys = ["first_name", "last_name", "email"]
     _child_creation_keys = ["first_name", "last_name", "birth_date"]
-
-    def get_object(self):
-        group_id = self.kwargs.get(self.lookup_field)
-        if group_id:
-            return Group.objects.prefetch_related('group_students', 'assigned_teachers').get(id=group_id)
-        raise Http404("Group not found")
-    
         
     def perform_create(self, serializer):
         '''
@@ -156,24 +148,30 @@ class ChildViewSet(mixins.RetrieveModelMixin,
                    mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
     """
-    GET -> list all children
+    LIST -> list children related to user
+    GET -> retrieve Child object
     PUT/PATCH -> update child details
+    DELETE -> destroy Child objects
     * Note: Child instance is created in GroupView 
     """
     queryset = Child.objects.all()
     permission_classes = [TeacherOrParentRelatedToChildPermission]
     serializer_class = ChildSerializer
-    lookup_field = "child_id"
 
     permission_map = {
         "destroy": [TeacherOrIsStaffPermission],
-        "list": [TeacherOrIsStaffPermission]
     }
 
     def get_permissions(self):
         permission_classes = self.permission_map.get(self.action, self.permission_classes)
         return [permission() for permission in permission_classes]
     
-    def get_object(self):
-        child_id = self.kwargs.get("child_id")
-        return get_object_or_404(Child, id=child_id)
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.user_type == UserTypeEnum.parent:
+    #         return Child.objects.filter(parents__user__id=user.id)
+    #     if user.user_type == UserTypeEnum.teacher:
+    #         return Child.objects.filter(group__assigned_teachers__teacher__user__id=user.id)
+    #     print("There are no children related to user")
+
+    

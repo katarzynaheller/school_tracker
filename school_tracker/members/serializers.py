@@ -46,6 +46,7 @@ class ChildSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name"
         )
+        
     def validate(self, attrs):
         if not attrs.get('parents'):
             raise serializers.ValidationError('Child must be assigned to at least one parent')

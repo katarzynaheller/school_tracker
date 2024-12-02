@@ -17,8 +17,12 @@ from school_tracker.utils.dicttools import get_values_from_dict
 from school_tracker.members.permissions import TeacherOrParentRelatedToChildPermission
 
 
-class MessageViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAuthenticated, TeacherOrParentRelatedToChildPermission]
+class MessageViewSet(mixins.CreateModelMixin, 
+                     mixins.ListModelMixin, 
+                     mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
+    
+    permission_classes = [IsAuthenticated]
     serializer_class = MessageSerializer
     lookup_field = "child_id"
 

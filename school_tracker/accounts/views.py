@@ -15,6 +15,7 @@ from school_tracker.accounts.serializers import (
     UserUpdateSerializer,
     UserSerializer    
 )
+from school_tracker.members.permissions import IsOwner
 
 
 class UserViewSet(mixins.CreateModelMixin,
@@ -44,17 +45,15 @@ class MeViewSet(mixins.UpdateModelMixin,
     """
     This endpoint is used for user data management (for users)
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwner]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
     serializer_map = {
         "update": MeUpdateSerializer,
+        "partial_update": MeUpdateSerializer,
         "change_password": PasswordUpdateSerializer
     }
-
-    def get_object(self):
-        return get_object_or_404(CustomUser, id=self.request.user.id)
 
     def get_serializer_class(self, *args, **kwargs):
         return self.serializer_map.get(self.action, self.serializer_class)
