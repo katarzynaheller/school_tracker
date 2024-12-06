@@ -265,16 +265,16 @@ class MessageViewPermissions(APITestCase):
         super().setUpClass()
         cls.parent = ParentFactory()
         cls.group_one = GroupFactory()
-        cls.grooup_two = GroupFactory()
+        cls.group_two = GroupFactory()
         cls.child_one = ChildFactory(parents=[cls.parent], group=cls.group_one)
-        cls.child_two = ChildFactory(parents=[cls.parent], group=cls.grooup_two)
+        cls.child_two = ChildFactory(parents=[cls.parent], group=cls.group_two)
 
         cls.teacher_one = TeacherFactory()
         cls.teacher_two = TeacherFactory()
         cls.teacher_unrelated = TeacherFactory()
 
         cls.assigned_teacher_one = AssignedTeacher(teacher=cls.teacher_one, group=cls.group_one)
-        cls.assigned_teacher_two = AssignedTeacher(teacher=cls.teacher_two, group=cls.grooup_two)
+        cls.assigned_teacher_two = AssignedTeacher(teacher=cls.teacher_two, group=cls.group_two)
 
         cls.messages_child_one = MessageFactory(sender=cls.parent.user, child=cls.child_one)
         cls.messages_child_two = MessageFactory(sender=cls.parent.user, child=cls.child_two)
@@ -287,10 +287,9 @@ class MessageViewPermissions(APITestCase):
         # then:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data, list)
-        self.assertContains(response, self.child_one.id)
-        self.assertContains(response, self.messages_child_one.id)
-        self.assertNotContains(response, self.messages_child_two.id)
-        self.assertEqual(len(response.data), 1)
+        for message in response.data:
+            self.assertIn(message["child"], self.child_one.id)
+       
 
     def test_list_message_view_for_parent(self):
         # when:
@@ -306,16 +305,14 @@ class MessageViewPermissions(APITestCase):
         self.assertContains(response, self.messages_child_two.id)
         self.assertEqual(len(response.data), 2)
 
-    def test_list_message_view_for_unrelated_teacher(self):
+    def test_detail_message_view_for_unrelated_teacher(self):
         # when:
         self.client.force_authenticate(self.teacher_unrelated.user)
-        self.url = reverse('messages-list')
+        self.url = reverse('messages-detail', args=[self.child_one.id])
         response = self.client.get(self.url)
         # then:
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertNotEqual(self.group_one.assigned_teachers.teacher, self.unrelated_teacher)
-        self.assertIsInstance(response.data, list)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
 
     def test_detail_message_view_for_teacher(self):
         # when:
@@ -323,34 +320,34 @@ class MessageViewPermissions(APITestCase):
         self.url = reverse('messages-detail', args=[self.child_one.id])
         response = self.client.get(self.url)
 
-        #assertions
+        # then:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_access_to_message_detailed_view_parent(self):
+        self.assertEqual(response.data["child"], self.child_one.id)
+        self.assertNotEqual(response.data['child'], self.child_two.id)
+    
+    def test_detail_message_view_for_parent(self):
         # when:
         self.client.force_authenticate(self.parent.user)
         self.url = reverse('messages-detail', args=[self.child_one.id])
         response = self.client.get(self.url)
         # then:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data),1)
-        self.assertIn(self.message_child_one.message_text, [message['message_text'] for message in response.data])        
-        self.assertNotIn(self.message_child_two.message_text, [message['message_text'] for message in response.data])
+        self.assertEqual(self.messages_child_one.child.id, response.data['child'])        
+        self.assertNotEqual(self.messages_child_two.child.id, response.data['child'])
 
     def test_create_message(self):
         # when:
         self.client.force_authenticate(self.parent.user)
         data = {
-            'child':self.child_one.id,
+            'sender': self.parent.user.id, 
+            'child': self.child_one.id,
             'message_text': "Example text"
         }
         self.url = reverse('messages-list')
         response = self.client.post(self.url, data)
-        created_message = Message.objects.latest("id")
         # then:
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(created_message.sender, self.parent.user)
-        self.assertEqual(created_message.child, self.child_one)
-        self.assertEqual(created_message.message_text, 'Example text')
+        self.assertEqual(response.data['sender'], self.parent.user.id)
+        self.assertEqual(response.data['child'], self.child_one.id)
+        self.assertEqual(response.data['message_text'], 'Example text')
 

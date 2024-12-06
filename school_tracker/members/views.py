@@ -166,12 +166,5 @@ class ChildViewSet(mixins.RetrieveModelMixin,
         permission_classes = self.permission_map.get(self.action, self.permission_classes)
         return [permission() for permission in permission_classes]
     
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.user_type == UserTypeEnum.parent:
-    #         return Child.objects.filter(parents__user__id=user.id)
-    #     if user.user_type == UserTypeEnum.teacher:
-    #         return Child.objects.filter(group__assigned_teachers__teacher__user__id=user.id)
-    #     print("There are no children related to user")
-
+    
     

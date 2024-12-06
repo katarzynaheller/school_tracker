@@ -95,5 +95,3 @@ class TeacherOrParentRelatedToGroupPermission(permissions.BasePermission):
             return obj.assigned_teachers.filter(teacher__user__id=request.user.id).exists()
         
         return False
-                   
-   
