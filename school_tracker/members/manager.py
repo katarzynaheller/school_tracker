@@ -70,14 +70,14 @@ class GroupManager(Manager):
     def with_related_teachers(self, group_id):
         return self.get_queryset().filter(id=group_id).prefetch_related(
             "assigned_teachers__user"
-        ).values_list("assigned_teachers__user__full_name", flat=True)
+        ).values_list("assigned_teachers__teacher__user__first_name", flat=True)
 
     def with_related_children(self, group_id):
         return self.get_queryset().filter(id=group_id).prefetch_related(
-            "group_members"
-        ).values_list("group_members__first_name", flat=True)
+            "group_students"
+        ).values_list("group_students__first_name", flat=True)
 
     def with_related_parents(self, group_id):
         return self.get_queryset().filter(id=group_id).prefetch_related(
-            "group_members__parents__user"
-        ).values_list("group_members__parents__user__full_name", flat=True).distinct()
+            "group_students__parents__user"
+        ).values_list("group_students__parents__user__first_name", flat=True).distinct()

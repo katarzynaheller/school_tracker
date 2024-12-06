@@ -21,7 +21,7 @@ class Message(models.Model):
     objects = MessageManager()
 
     def __str__(self):
-        return f"Message about {child.full_name} sent by {sender.email}"
+        return f"Message about {self.child.full_name} sent by {self.sender.email}"
 
     class Meta:
         ordering = ('-timestamp',)

@@ -23,17 +23,17 @@ class TestPermissionForEndpoints(APITestCase):
         super().setUpClass()
 
         cls.teacher = TeacherFactory()
-        cls.group = GroupFactory(teacher=[cls.teacher])
+        cls.group = GroupFactory()
 
         cls.parent = ParentFactory()
-        cls.child = ChildFactory(group=cls.group) 
+        cls.child = ChildFactory(group=cls.group, parents=[cls.parent]) 
 
     def test_access_to_child_list_view_for_teacher(self):
 
          # when:
-         self.url = reverse('api:members')
+         self.url = reverse('api_v1:members')
          self.client.force_authenticate(user=self.user_teacher)
-         responce = self.client.get(self.url)
+         response = self.client.get(self.url)
 
          # then:
-         self.assertEqual(responce.status_code, status.HTTP_200_OK)
+         self.assertEqual(response.status_code, status.HTTP_200_OK)
